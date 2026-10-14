@@ -1,0 +1,6 @@
+scripts/sync.log
+.obsidian/workspace*.json
+.trash/
+_backup/
+contexto/
+*.canvas
