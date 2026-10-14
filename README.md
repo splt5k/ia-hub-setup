@@ -7,7 +7,7 @@ Configura de uma vez **Claude Code, Codex, Antigravity e OpenCode** para gastar 
 1. Instale o [Git](https://git-scm.com/download/win), se ainda não tiver.
 2. Clone em qualquer pasta:
    ```
-   git clone https://github.com/splt5k/ia-hub.git
+   git clone https://github.com/splt5k/ia-hub-setup.git
    ```
 3. Dois cliques em **`instalar.cmd`**.
 
