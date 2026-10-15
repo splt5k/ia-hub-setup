@@ -8,6 +8,58 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 
 
 class CaptureTests(unittest.TestCase):
+    def test_codex_old_metadata_and_missing_context_recovery(self):
+        from memory.core import Memory
+        from memory.capture import Capture
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            memory = Memory(root)
+            capture = Capture(memory)
+            capture.since = 1700000000.0
+            log = root / 'rollout.jsonl'
+            meta = {'timestamp':'2000-01-01T00:00:00Z','type':'session_meta','payload':{'cwd':'D:/Synthetic/project'}}
+            def final(n):
+                return {'timestamp':'2099-01-01T00:00:00Z','type':'response_item','payload':{'role':'assistant','phase':'final','content':[{'type':'output_text','text':'metadadosantigos: conclusão precisa preservar o escopo original número '+str(n)}]}}
+            log.write_text(json.dumps(meta)+'\n'+json.dumps(final(1))+'\n',encoding='utf-8')
+            capture.ingest(log,'codex')
+            self.assertEqual(memory.search('metadadosantigos')[0]['project'],'d:/synthetic/project')
+            with memory.connection() as c:
+                c.execute("UPDATE capture_context SET project=''")
+            with log.open('a',encoding='utf-8') as f:
+                f.write(json.dumps(final(2))+'\n')
+            capture.ingest(log,'codex')
+            self.assertEqual([r['project'] for r in memory.search('metadadosantigos')],['d:/synthetic/project']*2)
+
+    def test_codex_baseline_and_explicit_repair_preserve_ids_history_status(self):
+        from memory.core import Memory, digest
+        from memory.capture import Capture
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            memory = Memory(root)
+            capture = Capture(memory)
+            log = root / '.codex' / 'sessions' / 'rollout.jsonl'
+            log.parent.mkdir(parents=True)
+            log.write_text(json.dumps({'type':'session_meta','payload':{'cwd':'D:/Synthetic/project'}})+'\n',encoding='utf-8')
+            with patch('memory.capture.Path.home',return_value=root):
+                capture.watch(baseline=True)
+            with memory.connection() as c:
+                context = c.execute('SELECT project FROM capture_context WHERE path=?',(str(log.resolve()),)).fetchone()
+            self.assertIsNotNone(context)
+            self.assertEqual(context[0].lower(),'d:/synthetic/project')
+            text = 'Decisão antiga capturada sem projeto, preservando integralmente a origem e o histórico.'
+            item = memory.store('Antiga',text,source='codex:transcript:'+log.name,kind='session-observation',key='capture:'+digest(str(log.resolve())+'\n'+text))
+            before = memory.get(item['id'])
+            with memory.connection() as c:
+                c.execute("UPDATE capture_context SET project='' WHERE path=?",(str(log.resolve()),))
+            with patch('memory.capture.Path.home',return_value=root):
+                capture.watch()
+            after = memory.get(item['id'])
+            self.assertEqual(after['project'],'d:/synthetic/project')
+            self.assertEqual(after['status'],before['status'])
+            self.assertEqual(after['revisions'],before['revisions'])
+            self.assertEqual(capture.repair_context(log),0)
+
     def test_antigravity_captures_last_response_without_thinking(self):
         from memory.core import Memory
         from memory.capture import Capture

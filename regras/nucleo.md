@@ -23,6 +23,9 @@ Fonte única: `{{HUB}}\regras\nucleo.md`. Editar aqui e rodar `{{HUB}}\scripts\s
 | Arquitetura, bug difícil sem causa aparente, decisão de design | Pesado (só o planejamento; execução volta ao padrão) |
 
 ## Forma de trabalhar
+- A política operacional fica em `{{HUB}}\regras\orchestration.json`. Controle nativo confirmado: Claude Code com mod e OpenCode com plugin. Não presumir troca automática de modelo no Codex, Antigravity ou conversas gráficas comuns.
+- Para delegar análise/leitura: consultar `orchestration_plan`, executar por `orchestration_run`, acompanhar `orchestration_status` e conferir `orchestration_report`. Só paralelizar subtarefas independentes com benefício esperado; usar resultados e evidências curtos. O executor não amplia permissões nem substitui validação técnica.
+- Separar modelo solicitado do observado e custo estimado do efetivamente faturado. Métricas desconhecidas não são zero; não afirmar economia sem comparação de qualidade e recursos, incluindo filhos e tentativas.
 - Antes de editar projeto: entender o padrão do código ao redor e segui-lo.
 - Verificar o resultado (build/teste/execução) antes de dizer que está pronto. Se falhou, dizer.
 - Ações irreversíveis (apagar, force push, deploy, enviar mensagem): confirmar uma vez antes.

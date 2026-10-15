@@ -43,23 +43,10 @@ if (Tem @("$H\.claude", "$env:LOCALAPPDATA\AnthropicClaude", "$env:APPDATA\Claud
 
 # ---------- Codex (ChatGPT) ----------
 if (Tem @("$H\.codex", "$env:LOCALAPPDATA\OpenAI\Codex") 'codex') {
-    $f = "$H\.codex\config.toml"
-    Backup $f; Backup "$H\.codex\AGENTS.md"
-    $t = if (Test-Path $f) { [IO.File]::ReadAllText($f, $utf8) } else { '' }
-    # altera só as chaves do topo (antes da primeira [tabela])
-    $i = [regex]::Match($t, '(?m)^\[').Index; if ($i -eq 0 -and $t -notmatch '^\[') { $i = $t.Length }
-    $topo = $t.Substring(0, $i); $resto = $t.Substring($i)
-    foreach ($kv in @(@('model', 'gpt-6.1-sol'), @('model_reasoning_effort', 'medium'))) {
-        $linha = "$($kv[0]) = `"$($kv[1])`""
-        if ($topo -match "(?m)^$($kv[0])\s*=") { $topo = $topo -replace "(?m)^$($kv[0])\s*=.*$", $linha }
-        else { $topo = "$linha`n" + $topo }
-    }
-    $t = $topo + $resto
-    if ($t -notmatch '\[profiles\.rapido\]') {
-        $t = $t.TrimEnd() + "`n`n[profiles.rapido]`nmodel = `"gpt-6.1-sol`"`nmodel_reasoning_effort = `"low`"`n`n[profiles.pesado]`nmodel = `"gpt-6-astra`"`nmodel_reasoning_effort = `"high`"`n"
-    }
-    Gravar $f $t
-    $res['Codex'] = 'configurado (gpt-6.1-sol médio, perfis rapido/pesado)'
+    Backup "$H\.codex\AGENTS.md"
+    # Perfis e migração por versão pertencem ao instalador Python da memória,
+    # executado abaixo; preservar modelo, permissões e configurações do usuário.
+    $res['Codex'] = 'detectado (perfis delegados ao instalador Python)'
 } else { $res['Codex'] = 'não instalado - ignorado' }
 
 # ---------- Antigravity / Gemini ----------

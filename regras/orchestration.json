@@ -1,0 +1,18 @@
+{
+  "version": "1",
+  "context_budget": 6000,
+  "max_attempts": 2,
+  "clients": {
+    "claude": {"allow_parallel": true},
+    "opencode": {
+      "allow_parallel": true,
+      "provider_profiles": {
+        "openai": ["openai/gpt-5.6-luna", "openai/gpt-5.6-sol", "openai/gpt-5.6-sol"],
+        "google": ["google/gemini-3.1-flash-lite", "google/gemini-3.6-flash", "google/gemini-3.6-flash"],
+        "opencode": ["opencode/mimo-v2.5-free", "opencode/mimo-v2.5-free", "opencode/mimo-v2.5-free"]
+      }
+    },
+    "codex": {"allow_parallel": false},
+    "agy": {"allow_parallel": false}
+  }
+}

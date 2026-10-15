@@ -17,6 +17,28 @@ class MemoryTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_context_scopes_project_and_marks_explicit_fallback(self):
+        other = self.memory.store('Bravo', 'dossiebravo exclusivo.', project='b')
+        self.assertEqual(self.memory.context('dossiebravo', project='a')['memories'], [])
+        fallback = self.memory.context('dossiebravo', project='a', global_fallback=True)
+        self.assertEqual(fallback['memories'][0]['id'], other['id'])
+        self.assertEqual(fallback['memories'][0]['context_scope'], 'global')
+        self.assertIn('notice', fallback)
+        self.memory.store('Fixture', 'IA-Hub-E2E segredo sintético.', project='IA-Hub-E2E-demo')
+        self.assertEqual(self.memory.context('IA-Hub-E2E')['memories'], [])
+        self.assertTrue(self.memory.context()['memories'])
+
+    def test_changed_content_loses_validation_but_replay_preserves_it(self):
+        first = self.memory.store('Política', 'Exige certificado.', project='a', key='policy', status='validated')
+        self.memory.store('Política', 'Exige certificado.', project='a', key='policy')
+        self.assertEqual(self.memory.get(first['id'])['status'], 'validated')
+        changed = self.memory.store('Política', 'Dispensa certificado.', project='a', key='policy')
+        saved = self.memory.get(first['id'])
+        self.assertEqual(changed['id'], first['id'])
+        self.assertEqual(saved['status'], 'reported')
+        self.assertEqual(saved['revision'], 2)
+        self.assertEqual(len(saved['revisions']), 2)
+
     def test_persistence_and_exact_deduplication_across_agents(self):
         a = self.memory.store('Decisão', 'Utilizar SQLite para preservar decisões.', project='teste', source='claude')
         b = self.memory.store('Mesma decisão', 'Utilizar SQLite para preservar decisões.', project='teste', source='codex')

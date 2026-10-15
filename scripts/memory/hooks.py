@@ -1,10 +1,14 @@
 import json
+import os
 import sys
 from .client import request, STATE
 from .core import now
 
 
 def main(client):
+    if os.environ.get('IA_HUB_WORKER') == '1':
+        print('{}')
+        return
     try:
         event = json.load(sys.stdin)
         if client.startswith('antigravity-'):
