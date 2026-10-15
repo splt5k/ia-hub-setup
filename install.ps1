@@ -3,6 +3,7 @@
 #   powershell -ExecutionPolicy Bypass -File <pasta-do-hub>\install.ps1
 # Pode rodar de novo sem problema (idempotente). Faz backup antes de alterar.
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 $hub   = $PSScriptRoot
 $H     = $env:USERPROFILE
 $utf8  = New-Object System.Text.UTF8Encoding($false)
@@ -10,7 +11,10 @@ $bk    = Join-Path $hub ("_backup\{0}-{1}" -f $env:COMPUTERNAME, (Get-Date -Form
 $res   = [ordered]@{}
 . "$hub\scripts\bootstrap.ps1"
 Assert-HubServiceOwnership
+Write-HubEvent 'clients' 'running'
 $components = @(Invoke-HubBootstrap)
+Write-HubEvent 'clients' 'done'
+Write-HubEvent 'config' 'running'
 foreach ($component in $components) { $res[$component.name] = "$($component.state): $($component.detail)" }
 
 function Backup($p) {
@@ -115,6 +119,7 @@ $res['Tarefa agendada'] = 'IA-Hub Sync (a cada login)'
 # ---------- Primeira sincronização ----------
 & "$hub\scripts\sync.ps1"
 $res['Sync'] = (Get-Content "$hub\scripts\sync.log" -Tail 1)
+Write-HubEvent 'config' 'done'
 & "$hub\scripts\install-memory.ps1"
 $res['Memória compartilhada'] = 'serviço local, MCPs, captura, busca semântica e tarefa no login'
 

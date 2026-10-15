@@ -3,6 +3,7 @@
 Somente leitura do banco local; schema verificado na versão 1.18.33.
 """
 import json
+import os
 import sqlite3
 import time
 from pathlib import Path
@@ -12,7 +13,8 @@ from .core import digest
 class OpenCodeCapture:
     def __init__(self, memory):
         self.memory = memory
-        self.path = Path.home() / '.local' / 'share' / 'opencode' / 'opencode.db'
+        data = Path(os.environ.get('XDG_DATA_HOME') or Path.home() / '.local/share')
+        self.path = data / 'opencode/opencode.db'
         with memory.connection() as c:
             c.execute('CREATE TABLE IF NOT EXISTS capture_meta (name TEXT PRIMARY KEY,value TEXT)')
             c.execute('INSERT OR IGNORE INTO capture_meta VALUES (?,?)', ('opencode_since', str(int(time.time() * 1000))))

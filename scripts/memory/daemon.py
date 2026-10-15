@@ -1,5 +1,6 @@
 import hmac
 import json
+import os
 import secrets
 import threading
 import time
@@ -23,12 +24,18 @@ def main():
         except FileExistsError:
             pass
     token = token_path.read_text(encoding='utf-8').strip()
+    if os.name != 'nt':
+        STATE.chmod(0o700)
+        token_path.chmod(0o600)
     memory = Memory(ROOT)
     capture = Capture(memory)
     opencode = OpenCodeCapture(memory)
-    state = {'started': now(), 'semantic_state': 'loading', 'model': '', 'last_error': '', 'last_scan': '', 'automatic_capture': ['claude', 'codex', 'opencode', 'antigravity-hooks']}
+    state = {'pid': os.getpid(), 'started': now(), 'semantic_state': 'loading', 'model': '', 'last_error': '', 'last_scan': '', 'automatic_capture': ['claude', 'codex', 'opencode', 'antigravity-hooks']}
 
     def dispatch(action, args):
+        if action == 'shutdown':
+            threading.Timer(.2, server.shutdown).start()
+            return {'stopping': True}
         if action == 'store':
             result = memory.store(**args)
             return result
@@ -121,4 +128,7 @@ def main():
                 state['last_error'] = type(error).__name__ + ': ' + str(error)[:160]
             time.sleep(10)
     threading.Thread(target=background, daemon=True).start()
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    finally:
+        server.server_close()

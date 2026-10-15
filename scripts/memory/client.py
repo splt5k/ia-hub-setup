@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -10,6 +11,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT / 'contexto' / '.memory'
 URL = 'http://127.0.0.1:43127/rpc'
+
+
+def preflight():
+    try:
+        with socket.create_connection(('127.0.0.1', 43127), timeout=2):
+            pass
+    except ConnectionRefusedError:
+        return
+    try:
+        health = request('health', autostart=False)
+        if Path(health['root']).resolve() != ROOT.resolve():
+            raise RuntimeError('Outra pasta ativa.')
+    except Exception as error:
+        raise RuntimeError('Porta 43127 ocupada por outra instalação. Atualize a pasta original ou migre os dados antes de ativar este clone.') from error
 
 
 def request(action, arguments=None, autostart=True):
@@ -41,7 +56,7 @@ def start():
     if os.name == 'nt' and executable.with_name('pythonw.exe').exists():
         executable = executable.with_name('pythonw.exe')
     with (STATE / 'service.log').open('a', encoding='utf-8') as log:
-        subprocess.Popen([str(executable), str(Path(__file__).with_name('entry.py')), 'daemon'], cwd=ROOT, stdin=subprocess.DEVNULL, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        subprocess.Popen([str(executable), str(Path(__file__).with_name('entry.py')), 'daemon'], cwd=ROOT, start_new_session=os.name != 'nt', stdin=subprocess.DEVNULL, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
     for _ in range(50):
         time.sleep(0.2)
         try:
