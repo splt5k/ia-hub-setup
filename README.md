@@ -1,6 +1,6 @@
 # IA-Hub
 
-Um cérebro local compartilhado para **Claude Code, Codex, Antigravity CLI e OpenCode**, com memória persistente, busca contextual e notas conectadas no Obsidian.
+Orquestração por ambiente e conhecimento compartilhado para **Claude Code, Codex, Antigravity CLI e OpenCode**. A política busca o modelo suficiente para a tarefa; memória, métricas e Obsidian sustentam a continuidade entre sessões.
 
 **Dois instaladores autocontidos:** `instalar.cmd` para Windows e `instalar.sh` para Linux. Cada arquivo contém os scripts, configurações padrão e interface. Não precisa copiar outras pastas, instalar Python/Node previamente ou manter o clone depois de instalar. Internet e login nas suas contas continuam necessários.
 
@@ -88,7 +88,29 @@ Fechar somente a aba mantém o painel disponível até 30 minutos sem atividade.
 
 Pode remover o arquivo baixado ou o clone após instalar. **A pasta definitiva contém seus dados: preserve-a.** Backups de segurança não são lixo temporário e não são apagados automaticamente.
 
-## Memória e Obsidian
+## Orquestração implementada nesta evolução
+
+O serviço existente decide modelo/esforço por regras determinísticas, sem chamar outro LLM para classificar todo prompt. A política em `regras/orchestration.json` permite ajustar modelos e limites. Os níveis de custo são ordinais: não representam preços verificados nem garantem o menor custo global.
+
+| Ambiente | Controle efetivo | Limite |
+|---|---|---|
+| Claude Code ≥2.1.287 | Mod altera modelo antes da inferência; escolhe modelo de novas delegações | Retomadas/workflows preservados; orçamento de dois agentes é local, sem prova de atomicidade do runtime |
+| OpenCode | Plugin altera o modelo da mensagem antes da inferência, preservando o provedor | Plugin posterior pode sobrescrever; GUI ainda requer validação própria |
+| Codex CLI/App local | MCP executa trabalhos delegados via CLI com modelo/esforço definidos | Não troca o modelo da conversa aberta automaticamente |
+| Antigravity CLI | Despacho com modelo definido e permissões nativas | Interceptação do modelo da GUI não comprovada |
+| Claude Chat e ChatGPT convencional | Dependem dos conectores disponíveis na sessão | Configurar o CLI não concede controle sobre essas conversas |
+
+`orchestration_plan` retorna decisão e motivos. `orchestration_run` inicia trabalho delegado de leitura/análise; `orchestration_status` entrega resultado/validação; `orchestration_report` exporta métricas do ledger no mesmo SQLite. Execução continua usando o login nativo, sem copiar credenciais nem trocar de provedor silenciosamente.
+
+O executor limita a dois workers e duas tentativas por tarefa, com uma escalada após falha de validação. Paralelismo exige subtarefas explicitamente independentes e benefício esperado declarado; não divide automaticamente qualquer texto em agentes. Não amplia permissões para contornar uma falha. Validações suportadas: texto exato, trecho obrigatório e JSON válido; isso não equivale a validar qualquer conclusão técnica.
+
+Para preservar sua escolha manual, inicie Claude/OpenCode com `IA_HUB_ROUTING_MODE=manual`. Depois da instalação/reparo, abra uma nova sessão ou recarregue os plugins. O relatório `contexto/.memory/installation.json` diferencia mod instalado de instalação pendente; hooks de memória permanecem como alternativa quando mods não estão disponíveis.
+
+Custos ausentes ficam nulos. Custos reportados são estimativas do cliente, não a fatura da assinatura. Cache tem semânticas diferentes por harness; não some os campos cegamente. O relatório de uma execução do dispatcher inclui filhos e tentativas; a telemetria nativa ainda marca cobertura incompleta dos subagentes. Nenhuma porcentagem de economia universal é prometida.
+
+Veja [contratos nativos](https://github.com/splt5k/ia-hub-setup/blob/source/orquestracao-v1/docs/native-control-evidence.md) e [provas do mod Claude](https://github.com/splt5k/ia-hub-setup/blob/source/orquestracao-v1/docs/claude-mod-results.md) nas fontes desta evolução. O piloto real Claude ↔ Codex passou nos dois sentidos. O comparativo de oito chamadas passou nas oito respostas exatas: houve menor estimativa de custo no Claude/Haiku, mas nenhuma redução de tokens demonstrada no Codex; cache e amostra pequena impedem generalização.
+
+## Memória compartilhada
 
 O MCP `ia_hub` usa serviço autenticado somente em `127.0.0.1:43127`, SQLite com revisões, busca textual FTS5 e embeddings multilíngues locais. Não publica a memória na internet.
 
@@ -145,6 +167,10 @@ Depois de instalar, personalize `regras/` na pasta definitiva. No Windows, `sinc
 
 ## Validação
 
+Nesta evolução: **134 testes Python** em cada sistema (Windows: 128 passaram/6 ignorados; Ubuntu/WSL: 126 passaram/8 ignorados), mais **12 testes oficiais do mod Claude**. Leitura/escrita de memória cruzada Claude ↔ Codex, dez ferramentas MCP nos quatro clientes, troca real Opus → Haiku com o mod instalado e preservação de IDs/revisões passaram. O dispatcher Claude leu um arquivo desconhecido; no Codex, a política nativa bloqueou a leitura e o limite ficou explícito. O piloto pareado de oito chamadas manteve oito respostas exatas, sem comprovar redução universal de tokens.
+
+Validações anteriores do instalador portátil:
+
 Provas de **2026-10-15**, com dados de teste isolados e instalação ativa preservada:
 
 - **72 testes:** Windows 67 passaram/5 específicos ignorados; Linux 65 passaram/7 específicos ignorados.
@@ -157,13 +183,13 @@ Ainda não foi exercitada instalação completa em Windows recém-formatado, GUI
 
 ## Código-fonte e novas versões
 
-O checkout de distribuição mantém os dois instaladores, este README, a imagem e metadados Git. **Código-fonte e testes completos estão preservados na tag [source/instaladores-portateis-v1](https://github.com/splt5k/ia-hub-setup/tree/source/instaladores-portateis-v1)**, no histórico deste repositório.
+O checkout de distribuição mantém os dois instaladores, este README, a imagem e metadados Git. **Código-fonte e testes completos estão preservados na tag [source/orquestracao-v1](https://github.com/splt5k/ia-hub-setup/tree/source/orquestracao-v1)**, no histórico deste repositório.
 
 Para alterar e gerar versões, com Python 3.11+ no ambiente de desenvolvimento:
 
 ```sh
 git fetch origin --tags
-git worktree add ../ia-hub-fonte source/instaladores-portateis-v1
+git worktree add ../ia-hub-fonte source/orquestracao-v1
 cd ../ia-hub-fonte
 python scripts/build-portable.py
 ```
