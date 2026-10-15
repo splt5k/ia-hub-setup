@@ -12,3 +12,5 @@ scripts/memory/*.log
 scripts/memory-start.ps1
 /backups/
 .tools/
+.setup-runtime/
+dist/

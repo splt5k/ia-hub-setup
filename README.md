@@ -1,97 +1,171 @@
 # IA-Hub
 
-Configura de uma vez **Claude Code, Codex, Antigravity e OpenCode** para gastar menos tokens e trabalhar melhor no Windows. As regras são as mesmas para todas as IAs, e elas compartilham uma memória de cada projeto entre si.
+Um cérebro local compartilhado para **Claude Code, Codex, Antigravity CLI e OpenCode**, com memória persistente, busca contextual e notas conectadas no Obsidian.
 
-## Instalar
+**Dois instaladores autocontidos:** `instalar.cmd` para Windows e `instalar.sh` para Linux. Cada arquivo contém os scripts, configurações padrão e interface. Não precisa copiar outras pastas, instalar Python/Node previamente ou manter o clone depois de instalar. Internet e login nas suas contas continuam necessários.
 
-1. Instale o [Git](https://git-scm.com/download/win), se ainda não tiver.
-2. Clone em qualquer pasta:
-   ```
-   git clone https://github.com/splt5k/ia-hub-setup.git
-   ```
-3. Dois cliques em **`instalar.cmd`**.
+![Painel local do IA-Hub: instalação existente identificada e verificação concluída](assets/instalador.jpg)
 
-O instalador:
-- instala os clientes ausentes (Claude Code/Desktop, Codex CLI/App, Antigravity CLI/App, OpenCode CLI e Obsidian), preservando os já instalados;
-- instala `uv` localmente se necessário, prepara Python 3.11 isolado e baixa o modelo semântico;
-- faz backup do que já existia, em `_backup\`;
-- agenda uma tarefa que reaplica as regras a cada login;
-- configura os MCPs e mecanismos locais de captura suportados;
-- só conclui após testar gravação, leitura, busca semântica e integridade das notas;
-- pode ser rodado novamente: componentes presentes são preservados e os que falharam são tentados outra vez.
+> Imagem de uma verificação real no Windows. A prévia é somente leitura. Detectar um app ou um MCP configurado não comprova captura de todas as conversas desse aplicativo.
 
-Requer Windows x64, internet e Git para clonar. O Windows App Installer (`winget`) é usado para os aplicativos gráficos e preparado via módulo oficial Microsoft.WinGet.Client se estiver ausente; indisponibilidade da Store, políticas do PC ou falhas de download são relatadas como instalação parcial, com saída diferente de zero. Não é necessário instalar Python ou Node previamente.
+## Instalação rápida
 
-Depois, **entre nas suas contas** e **feche e abra de novo** as IAs que estavam abertas. Autenticação, assinatura, confiança do workspace e permissões exigidas pelos aplicativos continuam sob controle do usuário. O instalador não declara captura em todos os apps: a matriz abaixo distingue capacidades verificadas.
+Baixe **somente o instalador do seu sistema** pelo GitHub, autenticado se o repositório exigir. Alternativamente, clone:
 
-O relatório de componentes fica em `contexto/bootstrap.json`; a prova do serviço fica em `contexto/.memory/doctor.json`. Falhas deixam os dados e backups disponíveis e podem ser corrigidas executando novamente. Não atualiza clientes já encontrados. OpenCode novo usa a versão 1.18.33 e verifica SHA256 do ZIP oficial.
+```sh
+git clone https://github.com/splt5k/ia-hub-setup.git
+cd ia-hub-setup
+```
 
-Mantenha uma única pasta ativa do IA-Hub. Se outro clone estiver servindo na porta 43127, o instalador interrompe antes de alterar as configurações. Atualize a pasta original ou migre os dados antes de ativar outro clone.
+### Windows x86_64
 
-**ChatGPT (app/web):** ele não lê arquivos do PC. Cole o texto de [`chatgpt/instrucoes-personalizadas.md`](chatgpt/instrucoes-personalizadas.md) em Configurações → Personalização.
-
-## O que muda
-
-| IA | Padrão depois de instalar | Para tarefa difícil |
-|---|---|---|
-| Claude Code | Sonnet, resumo automático de conversa ligado, subagentes `buscador` (Haiku) e `executor` (Sonnet) | `/model opus` e depois `/model sonnet` |
-| Codex | GPT-6.1 Sol, raciocínio médio, perfis `rapido` e `pesado` | `codex --profile pesado` |
-| Antigravity | regras curtas (o arquivo de instruções antigo vai para o backup) | trocar para Pro no seletor |
-| OpenCode | orquestrador + 8 subagentes, cada um no modelo certo | escolhe sozinho |
-
-Regras que todas seguem (`regras/nucleo.md`):
-- respostas em português, curtas e diretas;
-- leem só o trecho necessário dos arquivos e limitam a saída de comandos;
-- usam o modelo barato para buscas, o médio para implementar e o forte só para planejar;
-- confirmam antes de ações irreversíveis.
-
-## Memória entre IAs
-
-O serviço local `ia_hub` mantém histórico em SQLite, busca FTS5 e embeddings multilíngues locais. Os agentes acessam a mesma memória pelo MCP; o Obsidian mostra notas em `Memoria/` com links de projeto, assunto e similaridade. As notas antigas em `contexto/` são importadas incrementalmente.
-
-Os arquivos têm nomes legíveis; IDs estáveis permanecem no frontmatter e no banco. O índice é uma consulta e não cria arestas. As fontes de `contexto/`, `regras/`, README e planos autorais são indexadas sem editar os originais. Decisões são extraídas literalmente e vinculadas à fonte; correções preservam a identidade e o histórico, e decisões removidas ficam `superseded`, fora da busca corrente.
-
-Renomes dentro de `Memoria/` são reconciliados pelo ID. Assuntos e projetos aceitam anotações humanas, preservadas e indexadas como conhecimento. Movimentos têm diário de recuperação para reconciliar arquivos após uma interrupção. Testes sintéticos identificados por projeto/sessão permanecem preservados fora do grafo principal; documentos reais que apenas descrevem os testes continuam visíveis.
-
-- Claude Code: contexto por hooks, gravação por MCP e captura de respostas finais.
-- Codex App/CLI local: MCP e observador das respostas finais. Sessões existentes precisam recarregar ferramentas; a configuração não altera confiança de hooks.
-- OpenCode: MCP, plugin de contexto e observador de respostas finais do banco local, somente leitura.
-- Antigravity CLI: MCP, contexto por hooks e captura do transcript indicado pelo hook Stop. Formato validado na versão 1.3.5; app gráfico precisa recarregar e ser validado separadamente.
-- Claude Desktop: MCP configurado; reiniciar o app para carregar. Não há captura universal comprovada das conversas comuns.
-- ChatGPT convencional: precisa de ponte/conector disponível à conversa. Instruções personalizadas e configuração do Codex não concedem esse acesso.
-
-As observações automáticas são `reported`, não fatos confirmados. Os agentes devem registrar decisões relevantes por `memory_store` e só usar `validated` quando houver evidência. Correções com `key` estável preservam revisões; relações semânticas são afinidade, não causalidade.
-
-### Instalar e diagnosticar
-
-O [uv](https://docs.astral.sh/uv/) é preparado automaticamente (versão 0.11.24 quando ausente); Python 3.11 e dependências são isolados em `.memory-runtime/`. A instalação aguarda o modelo local de aproximadamente 220 MB e valida a busca semântica antes de concluir. O prazo dessa etapa é de até 15 minutos; se houver falha de rede, execute novamente. O instalador principal também executa:
+Abra `instalar.cmd` com dois cliques ou execute no PowerShell:
 
 ```powershell
-& .\scripts\install-memory.ps1
-& .\.memory-runtime\Scripts\python.exe .\scripts\memory\entry.py doctor
+.\instalar.cmd
 ```
 
-A tarefa `IA-Hub Memory` inicia o serviço oculto no login. O cliente também o inicia sob demanda. Ele escuta somente `127.0.0.1:43127`, com token local; não há exposição pública. `semantic_state: ready` comprova modelo carregado; `last_error`, `projection_conflicts` e `pending_projections` expõem falhas. Logs e backups de configurações ficam em `contexto/.memory/`.
+O bootstrap prepara uv/Python temporários e abre o painel no navegador. Usa fontes oficiais para os CLIs e `winget` para os apps gráficos; tenta preparar o Windows App Installer se necessário. Políticas da máquina, indisponibilidade da Store e permissões podem deixar componentes pendentes.
 
-O observador processa mensagens finais novas, sem raciocínio interno nem saídas de ferramentas. Não importa conversas antigas em massa. Claude/Codex dependem do formato de log da versão instalada; OpenCode depende de seu schema SQLite; alterações desses formatos precisam de nova validação. A redação automática de credenciais é uma proteção parcial: não colocar segredos nas notas ou respostas finais.
+### Linux x86_64
 
-Notas gerenciadas preservam o marcador `<!-- ia-hub:relations -->`. Edições no corpo entram como revisões. Alteração estrutural que impeça leitura aparece como conflito e não é sobrescrita. Projeções ausentes são reconstruídas. Há snapshot diário consistente do banco, sem copiar arquivos WAL manualmente.
-
-Os testes reais de 2026-10-15 comprovaram Claude Code → Codex → Claude Code e captura automática de Claude, Codex, Antigravity CLI e OpenCode. A busca por paráfrase também foi exercitada com o modelo ativo.
-
-Foi comprovada recuperação automática nos dois sentidos em novas sessões, com identificadores aleatórios ausentes dos pedidos dos leitores: Codex acionou a memória pelas regras globais; Claude recebeu contexto por hook mesmo com MCP e ferramentas desabilitados naquela sessão de teste. OpenCode e Antigravity CLI também leram e gravaram pelo MCP. Nenhum desses testes CLI deve ser apresentado como validação dos apps gráficos. No Antigravity CLI, o instalador concede somente as seis operações de `ia_hub`, preservando as demais políticas de permissão.
-
-`contexto/`, `Memoria/`, modelos e runtime ficam fora do Git. Todos os ambientes locais acessam a mesma base; isso não sincroniza computadores diferentes. O conteúdo recuperado é enviado ao provedor do agente quando usado como contexto, conforme as permissões desse ambiente.
-
-## Personalizar
-
-- Edite os arquivos em `regras/` e dê dois cliques em **`sincronizar.cmd`** para aplicar na hora.
-- `regras/nucleo.md` vale para todas as IAs; `claude.md`, `codex.md` e `antigravity.md` são os ajustes de cada uma.
-- O Obsidian (opcional) abre esta pasta como cofre para você ver as notas. Ele não precisa ficar aberto.
-
-## Desfazer
-
-Os arquivos originais estão em `_backup\<PC>-<data>\`; copie de volta para os caminhos de origem. Remova também a tarefa agendada:
+```sh
+chmod +x instalar.sh
+./instalar.sh
 ```
-schtasks /delete /tn "IA-Hub Sync" /f
+
+Execute como usuário normal, **sem sudo no comando principal**. Dependências de sistema e pacotes de alguns apps podem solicitar sudo separadamente.
+
+- **Sessão gráfica ativa:** painel; tenta instalar também os apps oficiais compatíveis com a distribuição.
+- **Servidor, SSH ou WSL:** terminal, quatro CLIs e memória; não instala apps gráficos por padrão.
+- Requer glibc 2.28+ e ferramentas básicas de extração. Tenta preparar curl, certificados, tar e unzip pelos gerenciadores reconhecidos. Alpine/musl não está suportado.
+- ARM64 possui caminhos no instalador, mas **não foi validado**. O alvo testado é x86_64.
+
+Depois, **entre nas contas e reabra os clientes** para carregar MCPs e hooks. Assinaturas, consentimentos e confiança de workspace continuam sob seu controle.
+
+## Instalação e manutenção
+
+O instalador verifica e extrai o pacote em uma pasta temporária exclusiva, identifica integrações existentes e prepara componentes ausentes. O painel oferece progresso por etapas reais e logs exportáveis. Downloads sem tamanho informado aparecem em andamento.
+
+| Ação | Resultado |
+|---|---|
+| Instalar | Prepara clientes, configurações, serviço, Python isolado e modelo semântico local (~220 MB); valida gravação/leitura, recuperação semântica e integridade |
+| Verificar | Diagnóstico somente leitura; não inicia nem reconfigura a memória |
+| Reparar / atualizar | Atualiza código gerenciado, tenta resolver pendências e preserva componentes presentes |
+| Reinstalar componentes | Exige seleção e confirmação; faz backup antes de substituir o runtime |
+| Remover integração | Exige confirmação; desconecta registros gerenciados e preserva aplicativos, banco, notas e histórico |
+
+**Em um PC já configurado:** reutiliza a pasta identificada, incluindo caminhos personalizados como `D:\Pessoal\IA-Hub`. Não cria outra base automaticamente. Um serviço ativo na porta 43127 pertencente a outra pasta bloqueia alterações conflitantes.
+
+Configurações recebem backups. Na atualização do pacote, arquivos pessoais existentes em `regras/`, `modelos/`, `claude/`, `opencode/`, `chatgpt/` e configurações do cofre são preservados. Os clientes recebem os ajustes gerenciados; MCPs externos, hooks personalizados e dados de outros programas são preservados pelos mecanismos do instalador.
+
+### Pasta definitiva
+
+| Sistema | Destino padrão em instalação nova |
+|---|---|
+| Windows | `%LOCALAPPDATA%\IA-Hub` |
+| Linux | `$XDG_DATA_HOME/ia-hub`, ou `~/.local/share/ia-hub` |
+
+Não é necessário ter unidade `D:`. Para escolher outro destino **antes da primeira instalação**:
+
+```powershell
+$env:IA_HUB_INSTALL_DIR = 'C:\MeusDados\IA-Hub'
+.\instalar.cmd
 ```
+
+```sh
+IA_HUB_INSTALL_DIR="$HOME/MeusDados/IA-Hub" ./instalar.sh
+```
+
+Use a pasta indicada pelo painel para diagnosticar ou personalizar uma instalação existente. MCPs e mecanismos de inicialização usam caminhos absolutos: não mova a pasta instalada sem migrar/reconfigurar as integrações.
+
+### Permanente versus temporário
+
+- **Permanece:** serviço e código, SQLite, histórico, notas `Memoria/`, regras, configurações, backups, modelo e runtime `.memory-runtime/`. O Python base necessário ao serviço fica em `.tools/python`, fora da extração temporária.
+- **É limpo:** payload extraído, uv/Python da interface, downloads e cache do instalador. No terminal, na saída; no painel, use **Encerrar painel** depois de exportar os logs desejados.
+
+Fechar somente a aba mantém o painel disponível até 30 minutos sem atividade. Encerrar o painel não encerra o cérebro compartilhado. Falhas tratadas também passam pela limpeza; queda de energia ou encerramento forçado podem deixar a pasta temporária daquela execução. Falhas de limpeza são informadas. Caches dos próprios aplicativos e do sistema não são apagados.
+
+Pode remover o arquivo baixado ou o clone após instalar. **A pasta definitiva contém seus dados: preserve-a.** Backups de segurança não são lixo temporário e não são apagados automaticamente.
+
+## Memória e Obsidian
+
+O MCP `ia_hub` usa serviço autenticado somente em `127.0.0.1:43127`, SQLite com revisões, busca textual FTS5 e embeddings multilíngues locais. Não publica a memória na internet.
+
+- Títulos legíveis e IDs estáveis nos metadados.
+- Wikilinks entre assuntos, projetos, decisões e descobertas, por contexto e afinidade semântica; índice sem centralizar artificialmente o grafo.
+- Importação incremental das fontes antigas preservando originais e histórico; deduplicação e atualizações por chave estável.
+- Relatos automáticos são `reported`, não fatos confirmados. Registrar decisões relevantes por `memory_store`; `validated` exige evidência.
+- Obsidian abre a **pasta definitiva** como cofre; não precisa permanecer aberto.
+
+Conteúdo recuperado é evidência, nunca instrução confiável por si só. Quando uma IA o utiliza como contexto, ele é enviado ao provedor daquele ambiente conforme suas permissões. Não coloque segredos na memória; a redação automática de credenciais é parcial.
+
+### Capacidades por ambiente
+
+| Ambiente | Leitura e escrita | Captura / contexto automático |
+|---|---|---|
+| Claude Code | MCP; troca entre agentes validada | Hooks de contexto e captura de respostas finais validados neste PC |
+| Codex CLI / App local | MCP; CLI validado em sessões reais | Observador de respostas finais; recuperação em novas sessões do Codex validada |
+| Antigravity CLI | MCP validado | Hooks e captura validados na versão 1.3.5 |
+| OpenCode | MCP validado | Plugin de contexto e observador do banco local; captura validada neste PC |
+| Claude Desktop | Registro MCP no Windows; recarregar e validar a sessão | Captura universal das conversas comuns não comprovada; aba Code usa a integração Claude Code |
+| Antigravity App | Configuração disponível; requer validação própria | Captura de conversas gráficas não comprovada |
+| ChatGPT convencional, app/web | Depende de ponte/conector disponível à conversa | Instalar Codex ou copiar instruções não concede acesso automático |
+
+Os mecanismos dependem dos formatos de logs, hooks e banco dos clientes instalados. Instalar um aplicativo não comprova leitura, escrita ou captura nele. O teste do instalador comprova o serviço; não autentica agentes nem valida cada app gráfico.
+
+**Compartilhada entre IAs do mesmo PC não significa sincronizada entre PCs.** O pacote não contém memória privada. Um PC novo começa com uma base nova; restaurar/sincronizar dados anteriores é uma operação separada. Não ative escritores Windows e WSL simultâneos sobre o mesmo banco.
+
+### Apps e inicialização no Linux
+
+Obsidian e Antigravity App usam pacotes oficiais e launchers do usuário. Claude Desktop usa pacote oficial para Ubuntu 22.04+/Debian 12+; ChatGPT/Codex App tem instalação automatizada para Ubuntu 24.04/26.04, Debian 13 e Fedora 43/44. Em outras distros, os CLIs podem funcionar enquanto apps sem método automatizado ficam pendentes. Bibliotecas gráficas, sandbox e permissões continuam necessários.
+
+Esses caminhos estão implementados; **abertura dos apps Linux e instalação privilegiada dos DEB/RPM não foram testadas** nesta validação. O serviço usa systemd do usuário quando disponível, com alternativas por login/autostart e início sob demanda. Não habilita linger nem promete execução antes do login.
+
+## Opções e diagnóstico
+
+| Opção | Windows | Linux |
+|---|---|---|
+| Sem argumentos | Painel | Detecta painel ou terminal |
+| `--cli` | Terminal | Terminal |
+| `--preview` | Painel somente leitura | Painel somente leitura |
+| `--self-test` | Testa extração sem instalar dependências | Testa extração sem instalar dependências |
+| `--help` | Ajuda, sem instalar | Ajuda, sem instalar |
+| `--headless` / `--desktop` | — | Força modo de instalação |
+| `--ui` | — | Força painel |
+| `--memory-only` | — | Prepara memória/integrações sem instalar clientes/apps |
+
+`--preview` ainda baixa o runtime temporário se necessário; não aplica alterações à instalação. `--self-test` verifica integridade e extração, sem comprovar instalação completa nem login.
+
+No painel, exporte texto ou JSON. Credenciais comuns são redigidas; revise os relatórios antes de compartilhar. A pasta definitiva guarda `contexto/bootstrap.json` e `contexto/.memory/doctor.json`. `semantic_state: ready` indica modelo carregado; erros, projeções pendentes e conflitos aparecem no diagnóstico.
+
+No terminal, saída **0** indica conclusão; **2**, componentes pendentes/falhos; **1**, erro que interrompeu a operação. No painel, instalação parcial fica indicada até encerrar. Corrija a causa e execute novamente; não renomeie/apague o banco para resolver falhas de rede ou modelo.
+
+Depois de instalar, personalize `regras/` na pasta definitiva. No Windows, `sincronizar.cmd` aplica as regras; no Linux, reexecute Reparar para reaplicar integrações. Esses arquivos estão embutidos no pacote e são instalados no destino correto.
+
+## Validação
+
+Provas de **2026-10-15**, com dados de teste isolados e instalação ativa preservada:
+
+- **72 testes:** Windows 67 passaram/5 específicos ignorados; Linux 65 passaram/7 específicos ignorados.
+- Arquivo único Windows: bootstrap/painel reais, reconhecimento da instalação existente, verificação somente leitura e limpeza ao encerrar.
+- Arquivo único Linux no Ubuntu/WSL: instalação headless, clientes existentes reconhecidos, modelo pronto e temporários removidos; `doctor` e recuperação pelo MCP configurado **Claude → Codex → Claude** passaram após limpeza. São conexões MCP reais, não sessões LLM autenticadas no perfil isolado.
+- Extração e rejeição de pacote adulterado por SHA256, com limpeza, testadas nos dois sistemas. Ajuda e argumentos inválidos não fazem deploy.
+- Validações anteriores neste PC comprovaram Claude Code ↔ Codex em sessões reais e captura nos quatro CLIs; isso não comprova captura universal nos apps.
+
+Ainda não foi exercitada instalação completa em Windows recém-formatado, GUI Linux, outras distros, ARM64 ou systemd real nesta etapa. O SHA256 embutido verifica integridade, **não é assinatura digital** do distribuidor.
+
+## Código-fonte e novas versões
+
+O checkout de distribuição mantém os dois instaladores, este README, a imagem e metadados Git. **Código-fonte e testes completos estão preservados na tag [source/instaladores-portateis-v1](https://github.com/splt5k/ia-hub-setup/tree/source/instaladores-portateis-v1)**, no histórico deste repositório.
+
+Para alterar e gerar versões, com Python 3.11+ no ambiente de desenvolvimento:
+
+```sh
+git fetch origin --tags
+git worktree add ../ia-hub-fonte source/instaladores-portateis-v1
+cd ../ia-hub-fonte
+python scripts/build-portable.py
+```
+
+O gerador produz `dist/instalar.cmd` e `dist/instalar.sh`, incluindo apenas fontes públicas selecionadas. Não empacota banco, notas pessoais, credenciais, runtimes ou modelos baixados. Para publicar alterações: testar as fontes, preservar novo commit/tag de fontes, gerar os dois arquivos e atualizar a distribuição, este README e a referência da tag. Não edite o Base64 manualmente.
