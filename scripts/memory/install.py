@@ -1,12 +1,17 @@
 """Integração aditiva, com backups e permissões limitadas às operações da memória."""
 import json
+import os
+import shlex
 import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from .client import ROOT, STATE, request
+
+WINDOWS = sys.platform == 'win32'
 
 
 def strip_json_comments(text):
@@ -17,9 +22,11 @@ def strip_json_comments(text):
 
 def main():
     home = Path.home()
+    STATE.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     backups = STATE / 'backups' / stamp
-    python = str(Path(sys.executable).resolve())
+    # Linux venv executables are symlinks: resolving them loses site-packages.
+    python = os.path.abspath(sys.executable)
     entry = str(Path(__file__).with_name('entry.py').resolve())
     changed = []
 
@@ -44,12 +51,17 @@ def main():
     def server(client):
         return {'command': python, 'args': [entry, 'mcp', client]}
 
+    if not WINDOWS:
+        from .linux import sync_rules, config_home
+        sync_rules(ROOT, home, save)
+    shell_command = subprocess.list2cmdline if WINDOWS else shlex.join
+
     update_json(home / '.claude.json', lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-code')))
 
     def hooks(obj):
         groups = obj.setdefault('hooks', {})
         for event in ['SessionStart', 'UserPromptSubmit', 'Stop']:
-            command = f'"{python}" "{entry}" hook claude'
+            command = shell_command([python, entry, 'hook', 'claude'])
             group = {'hooks': [{'type': 'command', 'command': command, 'timeout': 30}]}
             existing = groups.setdefault(event, [])
             retained = []
@@ -79,7 +91,7 @@ def main():
     agy_hooks = agy.with_name('hooks.json')
     def configure_agy_hooks(obj):
         obj['ia-hub-memory'] = {
-            event: [{'type': 'command', 'command': subprocess.list2cmdline([python, entry, 'hook', f'antigravity-{mode}']), 'timeout': 15}]
+            event: [{'type': 'command', 'command': shell_command([python, entry, 'hook', f'antigravity-{mode}']), 'timeout': 15}]
             for event, mode in [('SessionStart', 'context'), ('PreInvocation', 'context'), ('Stop', 'capture')]
         }
     update_json(agy_hooks, configure_agy_hooks)
@@ -91,17 +103,23 @@ def main():
             if grant not in allowed:
                 allowed.append(grant)
     update_json(agy_settings, scoped_memory_permissions)
-    desktops = [home / 'AppData' / 'Roaming' / 'Claude' / 'claude_desktop_config.json']
-    desktops += [p / 'LocalCache/Roaming/Claude/claude_desktop_config.json' for p in (home / 'AppData' / 'Local' / 'Packages').glob('Claude_*')]
-    # Antes do primeiro lançamento, o MSIX pode ainda não ter criado LocalCache.
-    packages = subprocess.run(['powershell.exe', '-NoProfile', '-Command', 'Get-AppxPackage -Name Claude -ErrorAction Stop | Select-Object -ExpandProperty PackageFamilyName'], capture_output=True, text=True)
-    if packages.returncode == 0:
-        desktops += [home / 'AppData/Local/Packages' / name / 'LocalCache/Roaming/Claude/claude_desktop_config.json'
-                     for name in getattr(packages, 'stdout', '').splitlines() if re.fullmatch(r'Claude_[A-Za-z0-9]+', name)]
-    for desktop in dict.fromkeys(desktops):
-        update_json(desktop, lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-desktop')))
+    if WINDOWS:
+        desktops = [home / 'AppData' / 'Roaming' / 'Claude' / 'claude_desktop_config.json']
+        desktops += [p / 'LocalCache/Roaming/Claude/claude_desktop_config.json' for p in (home / 'AppData' / 'Local' / 'Packages').glob('Claude_*')]
+        # Antes do primeiro lançamento, o MSIX pode ainda não ter criado LocalCache.
+        packages = subprocess.run(['powershell.exe', '-NoProfile', '-Command', 'Get-AppxPackage -Name Claude -ErrorAction Stop | Select-Object -ExpandProperty PackageFamilyName'], capture_output=True, text=True)
+        if packages.returncode == 0:
+            desktops += [home / 'AppData/Local/Packages' / name / 'LocalCache/Roaming/Claude/claude_desktop_config.json'
+                         for name in getattr(packages, 'stdout', '').splitlines() if re.fullmatch(r'Claude_[A-Za-z0-9]+', name)]
+        for desktop in dict.fromkeys(desktops):
+            update_json(desktop, lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-desktop')))
 
-    opencode_dir = home / '.config' / 'opencode'
+    opencode_dir = (home / '.config' if WINDOWS else config_home(home)) / 'opencode'
+    if not WINDOWS and not any((opencode_dir / f).exists() for f in ['opencode.json', 'opencode.jsonc']):
+        template = (ROOT / 'opencode/opencode.jsonc').read_text(encoding='utf-8-sig')
+        obj = json.loads(strip_json_comments(template))
+        obj['instructions'] = [str(opencode_dir / 'ia-hub.md')]
+        save(opencode_dir / 'opencode.jsonc', json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
     opencode_configs = [p for p in [opencode_dir / 'opencode.json', opencode_dir / 'opencode.jsonc'] if p.exists()]
     if not opencode_configs and opencode_dir.exists():
         opencode_configs = [opencode_dir / 'opencode.json']
@@ -117,17 +135,35 @@ def main():
         plugin = Path(__file__).with_name('opencode-plugin.js').read_text(encoding='utf-8').replace('__PYTHON__', json.dumps(python)).replace('__ENTRY__', json.dumps(entry))
         save(opencode_dir / 'plugins' / 'ia-hub-memory.js', plugin)
 
-    # Tarefa por usuário, sem elevação, sem modificar confiança de hooks.
-    pythonw = str(Path(python).with_name('pythonw.exe'))
-    script = ROOT / 'scripts' / 'memory-start.ps1'
-    save(script, f"$ErrorActionPreference = 'Stop'\nStart-Process -FilePath '{pythonw.replace(chr(39), chr(39)*2)}' -ArgumentList @('\"{entry}\"', 'health') -WindowStyle Hidden\n")
-    # health autoinicia o serviço; a tarefa não precisa manter um terminal aberto.
-    task_arguments = ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + str(script) + '"').replace("'", "''")
-    ps = "$a=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '" + task_arguments + "'; $t=New-ScheduledTaskTrigger -AtLogOn; $s=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; Register-ScheduledTask -TaskName 'IA-Hub Memory' -Action $a -Trigger $t -Settings $s -Description 'Memória local compartilhada IA-Hub' -Force | Out-Null"
-    registered = subprocess.run(['powershell.exe', '-NoProfile', '-Command', ps], capture_output=True, text=True)
-    if registered.returncode:
-        raise RuntimeError('Falha ao registrar tarefa IA-Hub Memory: ' + registered.stderr[:200])
-    health = request('health')
-    report = {'changed': changed, 'backup': str(backups), 'health': health, 'requires_restart': ['claude-desktop', 'antigravity-app', 'codex-app-existing-sessions', 'opencode-existing-sessions'], 'chatgpt_conventional': 'Sem ponte disponível confirmada; configuração local do Codex não configura o ChatGPT convencional.'}
+    if WINDOWS:
+        # Tarefa por usuário, sem elevação, sem modificar confiança de hooks.
+        pythonw = str(Path(python).with_name('pythonw.exe'))
+        script = ROOT / 'scripts' / 'memory-start.ps1'
+        save(script, f"$ErrorActionPreference = 'Stop'\nStart-Process -FilePath '{pythonw.replace(chr(39), chr(39)*2)}' -ArgumentList @('\"{entry}\"', 'health') -WindowStyle Hidden\n")
+        # health autoinicia o serviço; a tarefa não precisa manter um terminal aberto.
+        task_arguments = ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + str(script) + '"').replace("'", "''")
+        ps = "$a=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '" + task_arguments + "'; $t=New-ScheduledTaskTrigger -AtLogOn; $s=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; Register-ScheduledTask -TaskName 'IA-Hub Memory' -Action $a -Trigger $t -Settings $s -Description 'Memória local compartilhada IA-Hub' -Force | Out-Null"
+        registered = subprocess.run(['powershell.exe', '-NoProfile', '-Command', ps], capture_output=True, text=True)
+        if registered.returncode:
+            raise RuntimeError('Falha ao registrar tarefa IA-Hub Memory: ' + registered.stderr[:200])
+        startup = 'windows-task'
+    else:
+        from .linux import setup_startup
+        startup = setup_startup(ROOT, home, python, entry, save)
+    if not WINDOWS and startup == 'systemd-user':
+        for attempt in range(50):
+            try:
+                health = request('health', autostart=False)
+                owner = subprocess.run(['systemctl', '--user', 'show', 'ia-hub-memory.service', '--property=MainPID', '--value'], capture_output=True, text=True, timeout=10)
+                if owner.returncode or owner.stdout.strip() != str(health.get('pid')):
+                    raise RuntimeError('Daemon não está sob controle da unit systemd esperada.')
+                break
+            except OSError:
+                if attempt == 49:
+                    raise RuntimeError('Serviço systemd não iniciou. Consulte journalctl --user -u ia-hub-memory.')
+                time.sleep(.2)
+    else:
+        health = request('health')
+    report = {'startup': startup, 'platform': 'windows' if WINDOWS else 'linux', 'changed': changed, 'backup': str(backups), 'health': health, 'requires_restart': ['claude-desktop', 'antigravity-app', 'codex-app-existing-sessions', 'opencode-existing-sessions'], 'chatgpt_conventional': 'Sem ponte disponível confirmada; configuração local do Codex não configura o ChatGPT convencional.'}
     (STATE / 'installation.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))

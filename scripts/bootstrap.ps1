@@ -1,6 +1,10 @@
-# Functions only: safe to dot-source for diagnostics/tests.
+﻿# Functions only: safe to dot-source for diagnostics/tests.
 $ErrorActionPreference = 'Stop'
 $script:HubRoot = Split-Path $PSScriptRoot -Parent
+
+function Write-HubEvent($phase, $status) {
+    if ($env:IA_HUB_UI_WORKER -eq '1') { Write-Host ('IA_HUB_EVENT:' + (@{phase=$phase;status=$status} | ConvertTo-Json -Compress)) }
+}
 
 function Update-HubPath {
     $extra = @("$env:USERPROFILE\.local\bin", "$env:LOCALAPPDATA\agy\bin", "$env:LOCALAPPDATA\IA-Hub\bin", "$script:HubRoot\.tools\uv", "$env:LOCALAPPDATA\Microsoft\WindowsApps")
@@ -74,7 +78,12 @@ function Install-HubPackage($id, $source = 'winget') {
 }
 
 function Ensure-HubPackage($name, $id, [scriptblock]$detect, $source = 'winget', [scriptblock]$installer) {
-    if (& $detect) { return [pscustomobject]@{name=$name;state='present';detail='Existing installation preserved'} }
+    $keys = @{'Claude Code'='claude';'Codex CLI'='codex';'Antigravity CLI'='agy';'OpenCode CLI'='opencode';'Obsidian'='desktop';'Claude Desktop'='desktop';'Antigravity App'='desktop';'Codex App'='desktop'}
+    $selected = @($env:IA_HUB_COMPONENTS -split ',' | Where-Object { $_ })
+    $force = @($env:IA_HUB_FORCE_COMPONENTS -split ',' | Where-Object { $_ })
+    $present = & $detect
+    if ($selected.Count -and $keys[$name] -notin $selected) { return [pscustomobject]@{name=$name;state='skipped';detail='Outside selected components'} }
+    if ($present -and $keys[$name] -notin $force) { return [pscustomobject]@{name=$name;state='present';detail='Existing installation preserved'} }
     Write-Host "Installing $name ..."
     try {
         if ($installer) { & $installer } else { Install-HubPackage $id $source }
@@ -85,7 +94,7 @@ function Ensure-HubPackage($name, $id, [scriptblock]$detect, $source = 'winget',
 }
 
 function Install-HubNativeScript($url, $name) {
-    $dir = Join-Path $script:HubRoot '.tools'
+    $dir = if ($env:IA_HUB_WORK_DIR) { $env:IA_HUB_WORK_DIR } else { Join-Path $script:HubRoot '.tools' }
     New-Item -ItemType Directory -Force $dir | Out-Null
     $file = Join-Path $dir "$name-install.ps1"
     Invoke-WebRequest $url -UseBasicParsing -OutFile $file
@@ -95,7 +104,7 @@ function Install-HubNativeScript($url, $name) {
 
 function Install-HubOpenCode {
     if ($env:PROCESSOR_ARCHITECTURE -ne 'AMD64') { throw 'OpenCode bootstrap requires Windows x64.' }
-    $dir = Join-Path $script:HubRoot '.tools'
+    $dir = if ($env:IA_HUB_WORK_DIR) { $env:IA_HUB_WORK_DIR } else { Join-Path $script:HubRoot '.tools' }
     New-Item -ItemType Directory -Force $dir | Out-Null
     $zip = Join-Path $dir 'opencode.zip'
     Invoke-WebRequest 'https://github.com/anomalyco/opencode/releases/download/v1.18.33/opencode-windows-x64-baseline.zip' -UseBasicParsing -OutFile $zip

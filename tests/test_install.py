@@ -25,7 +25,7 @@ class InstallTests(unittest.TestCase):
             for name in ['scripts', 'modelos', 'opencode', 'claude', 'regras']:
                 shutil.copytree(repo / name, root / name, ignore=shutil.ignore_patterns('__pycache__'))
             shutil.copy2(repo / 'install.ps1', root / 'install.ps1')
-            (root / 'scripts/bootstrap.ps1').write_text("function Assert-HubServiceOwnership {}\nfunction Invoke-HubBootstrap { [pscustomobject]@{name='fixture';state='present';detail='test'} }", encoding='utf-8')
+            (root / 'scripts/bootstrap.ps1').write_text("function Assert-HubServiceOwnership {}\nfunction Write-HubEvent {}\nfunction Invoke-HubBootstrap { [pscustomobject]@{name='fixture';state='present';detail='test'} }", encoding='utf-8')
             (root / 'scripts/install-memory.ps1').write_text('# Stub: memory installer is tested separately.', encoding='utf-8')
             home = Path(tmp) / 'home'
             opencode = home / '.config/opencode/opencode.json'
@@ -67,7 +67,7 @@ class InstallTests(unittest.TestCase):
             opencode = home / '.config/opencode/opencode.json'
             opencode.parent.mkdir(parents=True)
             opencode.write_text(json.dumps({'mcp': {'existing': {'type': 'local', 'command': ['custom']}}, 'instructions': ['custom.md']}), encoding='utf-8')
-            with patch.object(install.Path, 'home', return_value=home), patch.object(install, 'ROOT', hub), patch.object(install, 'STATE', state), patch.object(install.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stderr='', stdout='Claude_freshpackage\n')) as runner, patch.object(install, 'request', return_value={'records': 0}), contextlib.redirect_stdout(io.StringIO()):
+            with patch.object(install, 'WINDOWS', True), patch.object(install.Path, 'home', return_value=home), patch.object(install, 'ROOT', hub), patch.object(install, 'STATE', state), patch.object(install.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stderr='', stdout='Claude_freshpackage\n')) as runner, patch.object(install, 'request', return_value={'records': 0}), contextlib.redirect_stdout(io.StringIO()):
                 install.main()
                 install.main()  # Reinstalar não duplica hooks, MCPs ou instruções.
             config = tomllib.loads((home / '.codex/config.toml').read_text(encoding='utf-8'))

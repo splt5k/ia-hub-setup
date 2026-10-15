@@ -20,6 +20,18 @@ def main():
     elif command == 'hook':
         from memory.hooks import main as run
         run(sys.argv[2])
+    elif command == 'preflight':
+        from memory.client import preflight
+        preflight()
+    elif command in ('linux-apps', 'linux-summary'):
+        from memory.linux_apps import install_apps, summary
+        install_apps() if command == 'linux-apps' else summary()
+    elif command in ('sync', 'startup'):
+        from memory.linux import sync
+        sync()
+        if command == 'startup':
+            from memory.client import request
+            request('health')
     elif command == 'doctor':
         from memory.doctor import check
         check()
