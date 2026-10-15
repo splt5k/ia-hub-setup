@@ -111,6 +111,8 @@ $res['Tarefa agendada'] = 'IA-Hub Sync (a cada login)'
 # ---------- Primeira sincronização ----------
 & "$hub\scripts\sync.ps1"
 $res['Sync'] = (Get-Content "$hub\scripts\sync.log" -Tail 1)
+& "$hub\scripts\install-memory.ps1"
+$res['Memória compartilhada'] = 'serviço local, MCPs, captura, busca semântica e tarefa no login'
 
 Write-Host "`nIA-Hub instalado em $hub`n"
 $res.GetEnumerator() | ForEach-Object { Write-Host ("  {0,-16} {1}" -f $_.Key, $_.Value) }
