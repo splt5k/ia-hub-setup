@@ -10,12 +10,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT / 'contexto' / '.memory'
-URL = 'http://127.0.0.1:43127/rpc'
+PORT = int(os.environ.get('IA_HUB_PORT', '43127'))
+if not 1024 <= PORT <= 65535:
+    raise ValueError('IA_HUB_PORT precisa estar entre 1024 e 65535.')
+URL = f'http://127.0.0.1:{PORT}/rpc'
 
 
 def preflight():
     try:
-        with socket.create_connection(('127.0.0.1', 43127), timeout=2):
+        with socket.create_connection(('127.0.0.1', PORT), timeout=2):
             pass
     except ConnectionRefusedError:
         return
@@ -24,7 +27,7 @@ def preflight():
         if Path(health['root']).resolve() != ROOT.resolve():
             raise RuntimeError('Outra pasta ativa.')
     except Exception as error:
-        raise RuntimeError('Porta 43127 ocupada por outra instalação. Atualize a pasta original ou migre os dados antes de ativar este clone.') from error
+        raise RuntimeError(f'Porta {PORT} ocupada por outra instalação. Atualize a pasta original ou migre os dados antes de ativar este clone.') from error
 
 
 def request(action, arguments=None, autostart=True):

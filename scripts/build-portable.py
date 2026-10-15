@@ -22,6 +22,8 @@ def public_files(root):
             relative = path.relative_to(root)
             if path.is_symlink() or not path.is_file() or '__pycache__' in relative.parts:
                 continue
+            if 'proof' in relative.parts:
+                continue  # Evidências locais não são payload público de instalação.
             if directory == 'scripts' and (path.name in ('build-portable.py', 'memory-start.ps1') or 'portable' in relative.parts and path.name not in ('entry.py', 'bootstrap.ps1')):
                 continue
             if path.suffix not in ('.py', '.ps1', '.sh', '.js', '.md', '.json', '.jsonc', '.css', '.html', '.lock', '.jpg'):

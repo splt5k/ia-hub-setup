@@ -1,0 +1,244 @@
+[
+  {
+    "prompt": "Calcule 1+1. Responda apenas o número.",
+    "expected": "2",
+    "actual": "2",
+    "exact_match": true,
+    "exit_code": 0,
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 3,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 2947,
+        "webSearchRequests": 0,
+        "costUSD": 0.00059645,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 2947,
+      "cache_read_input_tokens": 535,
+      "output_tokens": 3,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 2947,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cache_read_input_tokens": 535,
+          "cache_creation_input_tokens": 2947,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2947
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "cost_estimate_usd": 0.00059645,
+    "duration_ms": 1512,
+    "attempts": [
+      {
+        "event": "attempt",
+        "run_id": "claude-haiku-5-5",
+        "event_id": "step:670829d3-4425-4457-99de-8c4650cdbbe5:0",
+        "model_requested": "claude-haiku-5-5",
+        "model_reported": "claude-haiku-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 535,
+          "cache_creation_input_tokens": 2947
+        },
+        "duration_ms": 1089,
+        "status": "completed",
+        "validation": {
+          "state": "not_run",
+          "reason": "O mod nÃ£o redefine a qualidade da resposta."
+        }
+      }
+    ],
+    "events": [
+      {
+        "event": "start",
+        "prompt": "Calcule 1+1. Responda apenas o nÃºmero.",
+        "client": "claude-code",
+        "project": "C:\\Users\\MaykoM\\Documents\\Codex\\2026-10-15\\de\\work\\ia-hub-orchestration\\scripts\\memory\\claude-mod\\proof\\native-proof-tlb4tirq",
+        "current_model": "claude-opus-5-5",
+        "mode": "auto",
+        "session_id": "ad09bae2-55bc-4835-8a12-d9a3e91b4935",
+        "idempotency_key": "claude:pending:ad09bae2-55bc-4835-8a12-d9a3e91b4935:1"
+      },
+      {
+        "event": "attempt",
+        "run_id": "claude-haiku-5-5",
+        "event_id": "step:670829d3-4425-4457-99de-8c4650cdbbe5:0",
+        "model_requested": "claude-haiku-5-5",
+        "model_reported": "claude-haiku-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 535,
+          "cache_creation_input_tokens": 2947
+        },
+        "duration_ms": 1089,
+        "status": "completed",
+        "validation": {
+          "state": "not_run",
+          "reason": "O mod nÃ£o redefine a qualidade da resposta."
+        }
+      },
+      {
+        "event": "finish",
+        "run_id": "claude-haiku-5-5",
+        "status": "completed",
+        "duration_ms": 1513,
+        "validation": {
+          "state": "not_run"
+        }
+      }
+    ],
+    "stderr": ""
+  },
+  {
+    "prompt": "Calcule 2+3. Responda apenas o número.",
+    "expected": "5",
+    "actual": "5",
+    "exact_match": true,
+    "exit_code": 0,
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 3,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 2947,
+        "webSearchRequests": 0,
+        "costUSD": 0.0118755,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 2947,
+      "cache_read_input_tokens": 535,
+      "output_tokens": 3,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 2947,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cache_read_input_tokens": 535,
+          "cache_creation_input_tokens": 2947,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2947
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "cost_estimate_usd": 0.0118755,
+    "duration_ms": 1573,
+    "attempts": [
+      {
+        "event": "attempt",
+        "run_id": "claude-sonnet-5-5",
+        "event_id": "step:1b2a99a7-4e1f-44f4-912f-d08cdc57efe0:0",
+        "model_requested": "claude-sonnet-5-5",
+        "model_reported": "claude-sonnet-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 535,
+          "cache_creation_input_tokens": 2947
+        },
+        "duration_ms": 1116,
+        "status": "completed",
+        "validation": {
+          "state": "not_run",
+          "reason": "O mod nÃ£o redefine a qualidade da resposta."
+        }
+      }
+    ],
+    "events": [
+      {
+        "event": "start",
+        "prompt": "Calcule 2+3. Responda apenas o nÃºmero.",
+        "client": "claude-code",
+        "project": "C:\\Users\\MaykoM\\Documents\\Codex\\2026-10-15\\de\\work\\ia-hub-orchestration\\scripts\\memory\\claude-mod\\proof\\native-proof-tlb4tirq",
+        "current_model": "claude-opus-5-5",
+        "mode": "auto",
+        "session_id": "81b7e2f5-b708-4228-951e-f3d7414cf0af",
+        "idempotency_key": "claude:pending:81b7e2f5-b708-4228-951e-f3d7414cf0af:1"
+      },
+      {
+        "event": "attempt",
+        "run_id": "claude-sonnet-5-5",
+        "event_id": "step:1b2a99a7-4e1f-44f4-912f-d08cdc57efe0:0",
+        "model_requested": "claude-sonnet-5-5",
+        "model_reported": "claude-sonnet-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 535,
+          "cache_creation_input_tokens": 2947
+        },
+        "duration_ms": 1116,
+        "status": "completed",
+        "validation": {
+          "state": "not_run",
+          "reason": "O mod nÃ£o redefine a qualidade da resposta."
+        }
+      },
+      {
+        "event": "finish",
+        "run_id": "claude-sonnet-5-5",
+        "status": "completed",
+        "duration_ms": 1574,
+        "validation": {
+          "state": "not_run"
+        }
+      }
+    ],
+    "stderr": ""
+  }
+]

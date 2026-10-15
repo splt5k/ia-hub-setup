@@ -120,7 +120,13 @@ def remove_configs(root, home, windows=None):
                     obj['instructions'] = [v for v in obj['instructions'] if v.replace('\\', '/') != instruction]
         json_edit(path, edit)
     settings = home / '.claude/settings.json'
+    known_marketplaces = home / '.claude/plugins/known_marketplaces.json'
+    mod_source = json_file(known_marketplaces).get('ia-hub-local', {}).get('source', {}).get('path')
+    owned_mod = bool(mod_source and Path(mod_source).resolve() == (root / 'contexto/.orchestration/claude-mod').resolve())
     def remove_hooks(obj):
+        if owned_mod:
+            obj.get('enabledPlugins', {}).pop('ia-hub-router@ia-hub-local', None)
+            obj.get('extraKnownMarketplaces', {}).pop('ia-hub-local', None)
         for event, groups in obj.get('hooks', {}).items():
             remaining = []
             for group in groups:
@@ -129,6 +135,9 @@ def remove_configs(root, home, windows=None):
                     remaining.append({**group, 'hooks': hooks})
             obj['hooks'][event] = remaining
     json_edit(settings, remove_hooks)
+    if owned_mod:
+        json_edit(known_marketplaces, lambda obj: obj.pop('ia-hub-local', None))
+        json_edit(home / '.claude/plugins/installed_plugins.json', lambda obj: obj.get('plugins', {}).pop('ia-hub-router@ia-hub-local', None))
     def agy_hooks(obj):
         if entry_owned(obj.get('ia-hub-memory', {}), root):
             obj.pop('ia-hub-memory', None)

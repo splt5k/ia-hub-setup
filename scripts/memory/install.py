@@ -57,6 +57,8 @@ def main():
     shell_command = subprocess.list2cmdline if WINDOWS else shlex.join
 
     update_json(home / '.claude.json', lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-code')))
+    from .mods import install_mod
+    native_mod = install_mod(ROOT, home, python, entry, save, backups)
 
     def hooks(obj):
         groups = obj.setdefault('hooks', {})
@@ -70,6 +72,8 @@ def main():
                 if handlers:
                     retained.append({**current, 'hooks': handlers})
             existing[:] = retained
+            if event == 'UserPromptSubmit' and native_mod['installed']:
+                continue  # O mod já recupera por prompt; evita contexto duplicado.
             existing.append(group)
     update_json(home / '.claude' / 'settings.json', hooks)
 
@@ -85,6 +89,8 @@ def main():
     permissions = ''.join(f'\n[mcp_servers.ia_hub.tools.{tool}]\napproval_mode = "approve"\n' for tool in ['memory_store', 'memory_search', 'memory_get', 'memory_context', 'memory_relate', 'memory_health'])
     block = block.replace('# END IA-HUB MEMORY', permissions + '# END IA-HUB MEMORY')
     save(codex, text.rstrip() + '\n' + block)
+    from .profiles import configure_profiles
+    profiles = configure_profiles(home, save)
 
     agy = home / '.gemini' / 'config' / 'mcp_config.json'
     update_json(agy, lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('antigravity')))
@@ -164,6 +170,6 @@ def main():
                 time.sleep(.2)
     else:
         health = request('health')
-    report = {'startup': startup, 'platform': 'windows' if WINDOWS else 'linux', 'changed': changed, 'backup': str(backups), 'health': health, 'requires_restart': ['claude-desktop', 'antigravity-app', 'codex-app-existing-sessions', 'opencode-existing-sessions'], 'chatgpt_conventional': 'Sem ponte disponível confirmada; configuração local do Codex não configura o ChatGPT convencional.'}
+    report = {'startup': startup, 'codex_profiles': profiles, 'claude_mod': native_mod, 'platform': 'windows' if WINDOWS else 'linux', 'changed': changed, 'backup': str(backups), 'health': health, 'requires_restart': ['claude-desktop', 'antigravity-app', 'codex-app-existing-sessions', 'opencode-existing-sessions'], 'chatgpt_conventional': 'Sem ponte disponível confirmada; configuração local do Codex não configura o ChatGPT convencional.'}
     (STATE / 'installation.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))

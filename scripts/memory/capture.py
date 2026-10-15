@@ -3,7 +3,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
-from .core import digest
+from .core import digest, project_id, is_validation
 
 
 class Capture:
@@ -16,6 +16,54 @@ class Capture:
             c.execute('INSERT OR IGNORE INTO capture_meta VALUES (?,?)', ('capture_since', str(time.time())))
             self.since = float(c.execute('SELECT value FROM capture_meta WHERE name=?', ('capture_since',)).fetchone()[0])
 
+    def session_project(self, path):
+        """Read session identity independently of time cutoff and message cursor."""
+        with Path(path).open('rb') as stream:
+            for _ in range(2000):
+                line = stream.readline(2 * 1024 * 1024)
+                if not line:
+                    break
+                if not line.endswith(b'\n'):
+                    # Skip oversized attachments without treating fragments as JSON.
+                    while line and not line.endswith(b'\n'):
+                        line = stream.readline(2 * 1024 * 1024)
+                    continue
+                try:
+                    event = json.loads(line)
+                except (ValueError, UnicodeDecodeError):
+                    continue
+                if event.get('type') == 'session_meta':
+                    return project_id(event.get('payload', {}).get('cwd') or event.get('cwd') or '')
+        return ''
+
+    def repair_context(self, path):
+        """Explicitly repair unscoped Codex captures matching this exact origin.
+
+        Identity, revisions and confidence remain unchanged. Conflicting scoped
+        keys are skipped rather than merged or deleted.
+        """
+        path = Path(path).resolve()
+        project = self.session_project(path)
+        if not project:
+            return 0
+        changed = 0
+        source = f'codex:transcript:{path.name}'
+        with self.memory.lock, self.memory.connection() as c:
+            rows = c.execute("SELECT r.* FROM records r JOIN sources s ON s.id=r.id WHERE r.project='' AND r.kind='session-observation' AND s.source=?", (source,)).fetchall()
+            for row in rows:
+                key = 'capture:' + digest(str(path) + '\n' + row['content'])
+                if row['stable_key'] != key:
+                    continue
+                if c.execute('SELECT 1 FROM records WHERE project=? AND stable_key=?', (project, key)).fetchone():
+                    continue
+                synthetic = row['is_test'] or is_validation(row['title'], row['content'], project, source)
+                c.execute('UPDATE records SET project=?,is_test=?,dirty=1 WHERE id=?', (project, int(synthetic), row['id']))
+                changed += 1
+            c.execute('INSERT OR REPLACE INTO capture_context VALUES (?,?)', (str(path), project))
+        if changed:
+            self.memory.project_dirty()
+        return changed
+
     def ingest(self, path, client, project=''):
         path = Path(path).resolve()
         if not path.exists():
@@ -27,6 +75,8 @@ class Capture:
                 row = c.execute('SELECT offset FROM cursors WHERE path=?', (str(path),)).fetchone()
                 context = c.execute('SELECT project FROM capture_context WHERE path=?', (str(path),)).fetchone()
                 project = project or (context[0] if context else '')
+            if not project and client == 'codex':
+                project = self.session_project(path)
             offset = row[0] if row else 0
             if path.stat().st_size < offset:
                 offset = 0
@@ -48,6 +98,9 @@ class Capture:
                         event = json.loads(line)
                     except (ValueError, UnicodeDecodeError):
                         continue
+                    project = event.get('cwd') or project
+                    if client == 'codex' and event.get('type') == 'session_meta':
+                        project = event.get('payload', {}).get('cwd') or project
                     timestamp = event.get('timestamp') or event.get('created_at')
                     if isinstance(timestamp, str):
                         try:
@@ -95,9 +148,14 @@ class Capture:
             for path in paths:
                 with self.memory.connection() as c:
                     known = c.execute('SELECT offset FROM cursors WHERE path=?', (str(path.resolve()),)).fetchone()
+                    context = c.execute('SELECT project FROM capture_context WHERE path=?', (str(path.resolve()),)).fetchone() if client == 'codex' else None
                     if not known and baseline:
+                        if client == 'codex':
+                            c.execute('INSERT OR REPLACE INTO capture_context VALUES (?,?)', (str(path.resolve()), self.session_project(path)))
                         c.execute('INSERT INTO cursors VALUES (?,?,?)', (str(path.resolve()), path.stat().st_size, path.stat().st_size))
                         continue
+                if client == 'codex' and known and (not context or not context['project']):
+                    self.repair_context(path)
                 if not baseline and (not known or known[0] != path.stat().st_size):
                     count += self.ingest(path, client)
         return count
