@@ -1,4 +1,4 @@
-﻿# Instala o IA-Hub neste PC. Detecta o que existe e configura só isso.
+﻿# Instala clientes ausentes, dependências e memória compartilhada neste PC.
 # Uso (depois do git clone, em qualquer pasta):
 #   powershell -ExecutionPolicy Bypass -File <pasta-do-hub>\install.ps1
 # Pode rodar de novo sem problema (idempotente). Faz backup antes de alterar.
@@ -8,6 +8,10 @@ $H     = $env:USERPROFILE
 $utf8  = New-Object System.Text.UTF8Encoding($false)
 $bk    = Join-Path $hub ("_backup\{0}-{1}" -f $env:COMPUTERNAME, (Get-Date -Format 'yyyy-MM-dd_HHmm'))
 $res   = [ordered]@{}
+. "$hub\scripts\bootstrap.ps1"
+Assert-HubServiceOwnership
+$components = @(Invoke-HubBootstrap)
+foreach ($component in $components) { $res[$component.name] = "$($component.state): $($component.detail)" }
 
 function Backup($p) {
     if (-not (Test-Path $p)) { return }
@@ -55,11 +59,10 @@ if (Tem @("$H\.codex", "$env:LOCALAPPDATA\OpenAI\Codex") 'codex') {
 } else { $res['Codex'] = 'não instalado - ignorado' }
 
 # ---------- Antigravity / Gemini ----------
-if (Tem @("$H\.gemini", "$env:LOCALAPPDATA\Programs\Antigravity") 'gemini') {
+if (Tem @("$H\.gemini", "$env:LOCALAPPDATA\Programs\Antigravity") 'agy') {
     New-Item -ItemType Directory -Force "$H\.gemini" | Out-Null
     Backup "$H\.gemini\GEMINI.md"; Backup "$H\.gemini\config\rules"
-    Get-ChildItem "$H\.gemini\config\rules" -Filter *.md -ErrorAction SilentlyContinue | Remove-Item -Force
-    $res['Antigravity'] = 'configurado (GEMINI.md do hub, regras antigas no backup)'
+    $res['Antigravity'] = 'configurado (GEMINI.md do hub, regras existentes preservadas)'
 } else { $res['Antigravity'] = 'não instalado - ignorado' }
 
 # ---------- OpenCode ----------
@@ -72,12 +75,13 @@ if (Tem @("$H\.config\opencode") 'opencode') {
     $cfg = [IO.File]::ReadAllText("$hub\opencode\opencode.jsonc", $utf8)
     $inst = ("$o\ia-hub.md").Replace('\', '/')
     $cfg = [regex]::Replace($cfg, '"instructions"\s*:\s*\[[^\]]*\]', "`"instructions`": [`"$inst`"]")
-    Gravar "$o\opencode.jsonc" $cfg
+    if (-not (Test-Path "$o\opencode.jsonc") -and -not (Test-Path "$o\opencode.json")) { Gravar "$o\opencode.jsonc" $cfg }
     $res['OpenCode'] = 'configurado (orquestrador + 8 subagentes, regras do hub)'
 } else { $res['OpenCode'] = 'não instalado - ignorado' }
 
 # ---------- Obsidian ----------
 $obsExe = "$env:LOCALAPPDATA\Programs\Obsidian\Obsidian.exe"
+if (-not (Test-Path $obsExe)) { $obsExe = "$env:ProgramFiles\Obsidian\Obsidian.exe" }
 if (Test-Path $obsExe) {
     $f = "$env:APPDATA\obsidian\obsidian.json"
     $j = if (Test-Path $f) { Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json } else { [pscustomobject]@{ vaults = New-Object psobject } }
@@ -111,8 +115,14 @@ $res['Tarefa agendada'] = 'IA-Hub Sync (a cada login)'
 # ---------- Primeira sincronização ----------
 & "$hub\scripts\sync.ps1"
 $res['Sync'] = (Get-Content "$hub\scripts\sync.log" -Tail 1)
+& "$hub\scripts\install-memory.ps1"
+$res['Memória compartilhada'] = 'serviço local, MCPs, captura, busca semântica e tarefa no login'
 
-Write-Host "`nIA-Hub instalado em $hub`n"
+Write-Host "`nConfiguracao do IA-Hub em $hub`n"
 $res.GetEnumerator() | ForEach-Object { Write-Host ("  {0,-16} {1}" -f $_.Key, $_.Value) }
 if (Test-Path $bk) { Write-Host "`n  Backup: $bk" }
 Write-Host "`n  ChatGPT (app/web): cole o texto de chatgpt\instrucoes-personalizadas.md em Configurações > Personalização."
+Write-Host '  Entre nas contas dos aplicativos e reabra as sessoes existentes. Logins e captura em apps graficos nao foram validados pelo instalador.'
+$failed = @($components | Where-Object state -eq 'failed')
+if ($failed.Count) { throw "Instalacao parcial: $($failed.name -join ', '). Veja contexto\bootstrap.json e execute instalar.cmd novamente." }
+Write-Host '  Instalacao e verificacao da memoria concluidas. Relatorios: contexto\bootstrap.json e contexto\.memory\doctor.json.'
