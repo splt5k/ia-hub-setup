@@ -12,12 +12,21 @@ Configura de uma vez **Claude Code, Codex, Antigravity e OpenCode** para gastar 
 3. Dois cliques em **`instalar.cmd`**.
 
 O instalador:
-- detecta quais IAs existem no PC e configura só essas;
+- instala os clientes ausentes (Claude Code/Desktop, Codex CLI/App, Antigravity CLI/App, OpenCode CLI e Obsidian), preservando os já instalados;
+- instala `uv` localmente se necessário, prepara Python 3.11 isolado e baixa o modelo semântico;
 - faz backup do que já existia, em `_backup\`;
 - agenda uma tarefa que reaplica as regras a cada login;
-- pode ser rodado de novo quando quiser.
+- configura os MCPs e mecanismos locais de captura suportados;
+- só conclui após testar gravação, leitura, busca semântica e integridade das notas;
+- pode ser rodado novamente: componentes presentes são preservados e os que falharam são tentados outra vez.
 
-Depois, **feche e abra de novo** as IAs que estavam abertas.
+Requer Windows x64, internet e Git para clonar. O Windows App Installer (`winget`) é usado para os aplicativos gráficos e preparado via módulo oficial Microsoft.WinGet.Client se estiver ausente; indisponibilidade da Store, políticas do PC ou falhas de download são relatadas como instalação parcial, com saída diferente de zero. Não é necessário instalar Python ou Node previamente.
+
+Depois, **entre nas suas contas** e **feche e abra de novo** as IAs que estavam abertas. Autenticação, assinatura, confiança do workspace e permissões exigidas pelos aplicativos continuam sob controle do usuário. O instalador não declara captura em todos os apps: a matriz abaixo distingue capacidades verificadas.
+
+O relatório de componentes fica em `contexto/bootstrap.json`; a prova do serviço fica em `contexto/.memory/doctor.json`. Falhas deixam os dados e backups disponíveis e podem ser corrigidas executando novamente. Não atualiza clientes já encontrados. OpenCode novo usa a versão 1.18.33 e verifica SHA256 do ZIP oficial.
+
+Mantenha uma única pasta ativa do IA-Hub. Se outro clone estiver servindo na porta 43127, o instalador interrompe antes de alterar as configurações. Atualize a pasta original ou migre os dados antes de ativar outro clone.
 
 **ChatGPT (app/web):** ele não lê arquivos do PC. Cole o texto de [`chatgpt/instrucoes-personalizadas.md`](chatgpt/instrucoes-personalizadas.md) em Configurações → Personalização.
 
@@ -55,11 +64,11 @@ As observações automáticas são `reported`, não fatos confirmados. Os agente
 
 ### Instalar e diagnosticar
 
-Requer [uv](https://docs.astral.sh/uv/) no PATH; Python 3.11 e dependências são isolados em `.memory-runtime/`. O primeiro início baixa um modelo local de aproximadamente 220 MB. O instalador principal também executa:
+O [uv](https://docs.astral.sh/uv/) é preparado automaticamente (versão 0.11.24 quando ausente); Python 3.11 e dependências são isolados em `.memory-runtime/`. A instalação aguarda o modelo local de aproximadamente 220 MB e valida a busca semântica antes de concluir. O prazo dessa etapa é de até 15 minutos; se houver falha de rede, execute novamente. O instalador principal também executa:
 
 ```powershell
 & .\scripts\install-memory.ps1
-& .\.memory-runtime\Scripts\python.exe .\scripts\memory\entry.py health
+& .\.memory-runtime\Scripts\python.exe .\scripts\memory\entry.py doctor
 ```
 
 A tarefa `IA-Hub Memory` inicia o serviço oculto no login. O cliente também o inicia sob demanda. Ele escuta somente `127.0.0.1:43127`, com token local; não há exposição pública. `semantic_state: ready` comprova modelo carregado; `last_error`, `projection_conflicts` e `pending_projections` expõem falhas. Logs e backups de configurações ficam em `contexto/.memory/`.

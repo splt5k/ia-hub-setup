@@ -4,7 +4,11 @@ O serviço `ia_hub` acrescenta memória persistente às regras do IA-Hub. SQLite
 
 ## Instalação e operação
 
-Windows, Git e `uv` no PATH. Execute `instalar.cmd` ou `scripts/install-memory.ps1`. O runtime Python 3.11 fica isolado em `.memory-runtime/`; o primeiro início baixa o modelo de embeddings. Um diagnóstico deve mostrar `semantic_state: ready` antes de considerar a busca semântica ativa.
+Windows x64, Git e internet. Execute `instalar.cmd`: ele instala clientes ausentes, prepara `uv` e Python 3.11 sem depender do Python global, integra os clientes e verifica o serviço. `scripts/install-memory.ps1` prepara somente a memória e também instala `uv` se necessário. O runtime fica isolado em `.memory-runtime/`. A conclusão exige `semantic_state: ready`, teste real de gravação/leitura/busca semântica e projeções sem pendências ou conflitos.
+
+`entry.py doctor` repete essa verificação; o registro sintético fica oculto do grafo principal. Relatórios privados: `contexto/bootstrap.json` (componentes) e `contexto/.memory/doctor.json` (serviço). Um erro retorna saída diferente de zero; logins e consentimentos dos apps continuam pendentes até o usuário realizá-los. As integrações de apps gráficos não são comprovadas pelo diagnóstico do serviço.
+
+Os programas existentes são preservados; novas instalações usam scripts oficiais ou winget em escopo de usuário. Se winget estiver ausente, o bootstrap prepara PowerShellGet e Microsoft.WinGet.Client no usuário e executa Repair-WinGetPackageManager -Latest sem -AllUsers nem -Force. Políticas que bloqueiem App Installer são relatadas, sem tentativa de contorná-las. OpenCode novo é fixado em 1.18.33, com SHA256 verificado. Configurações existentes têm backup; MCPs, hooks, instruções e provedores não relacionados são mantidos. Não há elevação automática nem cópia de credenciais. Se outro clone ocupar a porta local, a configuração é interrompida antes de alterar clientes; mantenha uma única pasta ativa e migre os dados antes de trocá-la.
 
 ```powershell
 & .\.memory-runtime\Scripts\python.exe .\scripts\memory\entry.py health

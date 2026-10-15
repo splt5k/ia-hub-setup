@@ -20,6 +20,9 @@ def main():
     elif command == 'hook':
         from memory.hooks import main as run
         run(sys.argv[2])
+    elif command == 'doctor':
+        from memory.doctor import check
+        check()
     elif command == 'install':
         from memory.install import main as run
         run()

@@ -84,26 +84,35 @@ def main():
         }
     update_json(agy_hooks, configure_agy_hooks)
     agy_settings = home / '.gemini' / 'antigravity-cli' / 'settings.json'
-    if agy_settings.exists():
-        def scoped_memory_permissions(obj):
-            allowed = obj.setdefault('permissions', {}).setdefault('allow', [])
-            for tool in ['memory_context', 'memory_search', 'memory_get', 'memory_store', 'memory_relate', 'memory_health']:
-                grant = 'mcp(ia_hub/' + tool + ')'
-                if grant not in allowed:
-                    allowed.append(grant)
-        update_json(agy_settings, scoped_memory_permissions)
+    def scoped_memory_permissions(obj):
+        allowed = obj.setdefault('permissions', {}).setdefault('allow', [])
+        for tool in ['memory_context', 'memory_search', 'memory_get', 'memory_store', 'memory_relate', 'memory_health']:
+            grant = 'mcp(ia_hub/' + tool + ')'
+            if grant not in allowed:
+                allowed.append(grant)
+    update_json(agy_settings, scoped_memory_permissions)
     desktops = [home / 'AppData' / 'Roaming' / 'Claude' / 'claude_desktop_config.json']
-    desktops += list((home / 'AppData' / 'Local' / 'Packages').glob('Claude_*/LocalCache/Roaming/Claude/claude_desktop_config.json'))
-    for desktop in desktops:
-        if desktop.exists():
-            update_json(desktop, lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-desktop')))
+    desktops += [p / 'LocalCache/Roaming/Claude/claude_desktop_config.json' for p in (home / 'AppData' / 'Local' / 'Packages').glob('Claude_*')]
+    # Antes do primeiro lançamento, o MSIX pode ainda não ter criado LocalCache.
+    packages = subprocess.run(['powershell.exe', '-NoProfile', '-Command', 'Get-AppxPackage -Name Claude -ErrorAction Stop | Select-Object -ExpandProperty PackageFamilyName'], capture_output=True, text=True)
+    if packages.returncode == 0:
+        desktops += [home / 'AppData/Local/Packages' / name / 'LocalCache/Roaming/Claude/claude_desktop_config.json'
+                     for name in getattr(packages, 'stdout', '').splitlines() if re.fullmatch(r'Claude_[A-Za-z0-9]+', name)]
+    for desktop in dict.fromkeys(desktops):
+        update_json(desktop, lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-desktop')))
 
     opencode_dir = home / '.config' / 'opencode'
     opencode_configs = [p for p in [opencode_dir / 'opencode.json', opencode_dir / 'opencode.jsonc'] if p.exists()]
     if not opencode_configs and opencode_dir.exists():
         opencode_configs = [opencode_dir / 'opencode.json']
     for opencode in opencode_configs:
-        update_json(opencode, lambda obj: obj.setdefault('mcp', {}).update(ia_hub={'type': 'local', 'command': [python, entry, 'mcp', 'opencode'], 'enabled': True, 'timeout': 30000}))
+        def configure_opencode(obj):
+            obj.setdefault('mcp', {}).update(ia_hub={'type': 'local', 'command': [python, entry, 'mcp', 'opencode'], 'enabled': True, 'timeout': 30000})
+            instructions = obj.setdefault('instructions', [])
+            hub_instruction = str(opencode_dir / 'ia-hub.md').replace('\\', '/')
+            if hub_instruction not in instructions:
+                instructions.append(hub_instruction)
+        update_json(opencode, configure_opencode)
     if opencode_configs:
         plugin = Path(__file__).with_name('opencode-plugin.js').read_text(encoding='utf-8').replace('__PYTHON__', json.dumps(python)).replace('__ENTRY__', json.dumps(entry))
         save(opencode_dir / 'plugins' / 'ia-hub-memory.js', plugin)
