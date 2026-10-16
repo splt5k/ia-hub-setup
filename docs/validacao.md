@@ -50,3 +50,29 @@ Ver [eficiencia.md](eficiencia.md) para a comparação linha de base × IA-Hub e
 - **Obsidian:** o hub é adicionado à lista de cofres só com o app fechado; com o app aberto, abra a pasta pelo atalho `obsidian://open?path=…` ou reabra depois.
 - Máquina nova **real** (Windows recém-formatado, Linux com GUI, outras distros, ARM, systemd real) **não foi testada**.
 - O SHA256 embutido verifica integridade, não é assinatura digital.
+
+## 6. Antigravity (2026-10-16)
+
+Testes feitos pelo mantenedor no Windows, com a conta Google autenticada, instalação em `C:\Users\MaykoM\IA-Hub` e Antigravity CLI 1.3.6.
+
+| Teste | Resultado | Evidência |
+|---|---|---|
+| CLI `agy --print` com chamada explícita ao MCP | **Comprovado** (duas vezes) | `response: DESK-1234`, uma rodada |
+| CLI interativo: pergunta sem pedir ferramenta, respondida com memória do projeto | **Comprovado** | Código `CTX-5520` na transcrição (`transcript_full.jsonl`) com duas mensagens efêmeras injetadas pelo hook de contexto e nenhuma etapa de ferramenta |
+| CLI: captura da resposta pelo hook de fim de turno | **Comprovado** | Registro com origem `antigravity:transcript:<conversa>` criado na mesma conversa |
+| GUI: chamada ao MCP (`memory_context`) | **Comprovado** | Etapa "Search memory … · ia_hub" na conversa, resposta `DESK-1234` |
+| GUI: injeção automática de memória | **Não existe por desenho** | O app não expõe hook de prompt |
+
+Limites do hook de contexto do CLI, comprovados no código e nos testes:
+
+- O hook recebe só `conversationId`, `invocationNum`, `modelName`, `transcriptPath` e `workspacePaths`. **Não recebe o texto da pergunta.**
+- A recuperação usa o nome da pasta do projeto como consulta. Registros que não se ligam ao nome da pasta não são injetados.
+- A injeção ocorre só na primeira rodada da conversa (`invocationNum` 1).
+- Com a verbosidade padrão ("medium"), chamadas de ferramenta podem ficar recolhidas na tela; a transcrição é a evidência confiável.
+
+Defeitos encontrados e corrigidos nesta etapa:
+
+- Os hooks do Claude Code no Windows rodavam pelo bash, que apagava as barras invertidas (`command not found`). Correção: barras normais entre aspas (`d0a3667`).
+- A correção anterior aplicou esse mesmo formato aos hooks do Antigravity, que rodam pelo PowerShell, onde ele é erro de sintaxe. Os hooks pararam de disparar. Correção: formato sem aspas, com `&` quando há espaço (`73320e7`). Teste valida o comando no parser do PowerShell.
+
+Não validado: captura de conversas gráficas do Antigravity App (sem hook) e comportamento em outras versões do CLI.
