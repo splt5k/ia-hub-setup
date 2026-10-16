@@ -1,0 +1,745 @@
+{
+  "schema": 1,
+  "scope": "small_live_pilot_not_general_efficiency_proof",
+  "cross_memory": [],
+  "paired": [
+    {
+      "client": "claude-code",
+      "task": 0,
+      "arm": "baseline",
+      "wall_ms": 5358.99999999674,
+      "result": {
+        "run_id": "ce382d0ad22c47eeb1fa8790d74723b3",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "45",
+        "metrics": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 3109,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": 1709,
+          "cost_reported_usd": 0.0071809000000000005,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 0
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 0,
+          "cost_kind": "provider_reported_estimate"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "6dabafded5454192b7f315de01f71371",
+          "run_id": "ce382d0ad22c47eeb1fa8790d74723b3",
+          "model_requested": "sonnet",
+          "model_reported": "claude-sonnet-5-5",
+          "harness": "claude",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 3,
+            "cached_input_tokens": 3109,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": 1709
+          },
+          "cost_reported_usd": 0.0071809000000000005,
+          "duration_ms": 5063.000000009197,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:41:19.061105+00:00"
+        }
+      ]
+    },
+    {
+      "client": "claude-code",
+      "task": 0,
+      "arm": "hub",
+      "wall_ms": 4578.000000008615,
+      "result": {
+        "run_id": "500a19186cdd4c9b8e9b2c9c2d0cba86",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "45",
+        "metrics": {
+          "input_tokens": 2,
+          "output_tokens": 3,
+          "cached_input_tokens": 4623,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": 968,
+          "cost_reported_usd": 0.00024153000000000003,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 0
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 0,
+          "cost_kind": "provider_reported_estimate"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "9bb1ea114b024d1f8a08933f10533de2",
+          "run_id": "500a19186cdd4c9b8e9b2c9c2d0cba86",
+          "model_requested": "claude-haiku-5-5",
+          "model_reported": "claude-haiku-5-5",
+          "harness": "claude",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 3,
+            "cached_input_tokens": 4623,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": 968
+          },
+          "cost_reported_usd": 0.00024153000000000003,
+          "duration_ms": 4391.00000000326,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:41:24.041162+00:00"
+        }
+      ]
+    },
+    {
+      "client": "claude-code",
+      "task": 1,
+      "arm": "hub",
+      "wall_ms": 6000.0,
+      "result": {
+        "run_id": "c5179eddb6814a208dd37cfb63d06b4b",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "[2,4,6]",
+        "metrics": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cached_input_tokens": 4623,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": 989,
+          "cost_reported_usd": 0.00024873000000000007,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 0
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 0,
+          "cost_kind": "provider_reported_estimate"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "e86619c422234cb497e903a5c99bc02f",
+          "run_id": "c5179eddb6814a208dd37cfb63d06b4b",
+          "model_requested": "claude-haiku-5-5",
+          "model_reported": "claude-haiku-5-5",
+          "harness": "claude",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 9,
+            "cached_input_tokens": 4623,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": 989
+          },
+          "cost_reported_usd": 0.00024873000000000007,
+          "duration_ms": 5781.000000002678,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:41:30.078367+00:00"
+        }
+      ]
+    },
+    {
+      "client": "claude-code",
+      "task": 1,
+      "arm": "baseline",
+      "wall_ms": 5608.99999999674,
+      "result": {
+        "run_id": "1a4f593e07ea47baa027e5928b2aed6c",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "[2,4,6]",
+        "metrics": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cached_input_tokens": 3843,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": 990,
+          "cost_reported_usd": 0.0044383,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 0
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 0,
+          "cost_kind": "provider_reported_estimate"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "2735eb2245b442f9954beabac620d7c4",
+          "run_id": "1a4f593e07ea47baa027e5928b2aed6c",
+          "model_requested": "sonnet",
+          "model_reported": "claude-sonnet-5-5",
+          "harness": "claude",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 9,
+            "cached_input_tokens": 3843,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": 990
+          },
+          "cost_reported_usd": 0.0044383,
+          "duration_ms": 5469.000000011874,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:41:35.842415+00:00"
+        }
+      ]
+    },
+    {
+      "client": "codex",
+      "task": 0,
+      "arm": "baseline",
+      "wall_ms": 2312.999999994645,
+      "result": {
+        "run_id": "6bad9799de3d4bdfa55ed851fec746d1",
+        "status": "failed",
+        "validation": {
+          "passed": false,
+          "type": "exact"
+        },
+        "output": null,
+        "metrics": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cached_input_tokens": null,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "cached_input_tokens": 1,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "54f5dcf80e6244f993921b0d3057ba92",
+          "run_id": "6bad9799de3d4bdfa55ed851fec746d1",
+          "model_requested": "gpt-6.1-sol",
+          "model_reported": null,
+          "harness": "codex",
+          "status": "failed",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "cached_input_tokens": null,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 2156.9999999919673,
+          "validation": {
+            "passed": false,
+            "type": "exact"
+          },
+          "error": "['You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.', {'message': 'You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.'}, 'Process exited with code 1'] Reading additional input from stdin...",
+          "created": "2026-10-16T01:41:38.425681+00:00"
+        }
+      ]
+    },
+    {
+      "client": "codex",
+      "task": 0,
+      "arm": "hub",
+      "wall_ms": 2296.9999999913853,
+      "result": {
+        "run_id": "276e81d0cc62485f8f1ec6b032d757dc",
+        "status": "failed",
+        "validation": {
+          "passed": false,
+          "type": "exact"
+        },
+        "output": null,
+        "metrics": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cached_input_tokens": null,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "cached_input_tokens": 1,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "2d34410cd5774149be748b0e0262c3a8",
+          "run_id": "276e81d0cc62485f8f1ec6b032d757dc",
+          "model_requested": "gpt-6.1-sol",
+          "model_reported": null,
+          "harness": "codex",
+          "status": "failed",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "cached_input_tokens": null,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 2125.0,
+          "validation": {
+            "passed": false,
+            "type": "exact"
+          },
+          "error": "['You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.', {'message': 'You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.'}, 'Process exited with code 1'] Reading additional input from stdin...",
+          "created": "2026-10-16T01:41:40.714446+00:00"
+        }
+      ]
+    },
+    {
+      "client": "codex",
+      "task": 1,
+      "arm": "hub",
+      "wall_ms": 2296.9999999913853,
+      "result": {
+        "run_id": "1ab566dd50ec44b5bcbd2b5a27bd3be7",
+        "status": "failed",
+        "validation": {
+          "passed": false,
+          "type": "exact"
+        },
+        "output": null,
+        "metrics": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cached_input_tokens": null,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "cached_input_tokens": 1,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "4ec3e3cf95bc4a5a8662d9e334291f6c",
+          "run_id": "1ab566dd50ec44b5bcbd2b5a27bd3be7",
+          "model_requested": "gpt-6.1-sol",
+          "model_reported": null,
+          "harness": "codex",
+          "status": "failed",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "cached_input_tokens": null,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 2109.0000000112923,
+          "validation": {
+            "passed": false,
+            "type": "exact"
+          },
+          "error": "['You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.', {'message': 'You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.'}, 'Process exited with code 1'] Reading additional input from stdin...",
+          "created": "2026-10-16T01:41:43.097954+00:00"
+        }
+      ]
+    },
+    {
+      "client": "codex",
+      "task": 1,
+      "arm": "baseline",
+      "wall_ms": 2296.9999999913853,
+      "result": {
+        "run_id": "87e48fb5027d4b739dc0ea255d31b09e",
+        "status": "failed",
+        "validation": {
+          "passed": false,
+          "type": "exact"
+        },
+        "output": null,
+        "metrics": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cached_input_tokens": null,
+          "reasoning_output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "cached_input_tokens": 1,
+            "reasoning_output_tokens": 1,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "fc4f3bdf87664a11834c5ef5b3396103",
+          "run_id": "87e48fb5027d4b739dc0ea255d31b09e",
+          "model_requested": "gpt-6.1-sol",
+          "model_reported": null,
+          "harness": "codex",
+          "status": "failed",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "cached_input_tokens": null,
+            "reasoning_output_tokens": null,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 2125.0,
+          "validation": {
+            "passed": false,
+            "type": "exact"
+          },
+          "error": "['You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.', {'message': 'You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.'}, 'Process exited with code 1'] Reading additional input from stdin...",
+          "created": "2026-10-16T01:41:45.482216+00:00"
+        }
+      ]
+    },
+    {
+      "client": "antigravity",
+      "task": 0,
+      "arm": "baseline",
+      "wall_ms": 11187.000000005355,
+      "result": {
+        "run_id": "f99d590fe1cb43a7a1025f284a50fd95",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "45",
+        "metrics": {
+          "input_tokens": 16335,
+          "output_tokens": 144,
+          "cached_input_tokens": 0,
+          "reasoning_output_tokens": 142,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "17131612e59444528da77589a39ddf39",
+          "run_id": "f99d590fe1cb43a7a1025f284a50fd95",
+          "model_requested": "gemini-3.8-flash-medium",
+          "model_reported": null,
+          "harness": "agy",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 16335,
+            "output_tokens": 144,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 142,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 11031.000000002678,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:41:56.801723+00:00"
+        }
+      ]
+    },
+    {
+      "client": "antigravity",
+      "task": 0,
+      "arm": "hub",
+      "wall_ms": 7125.0,
+      "result": {
+        "run_id": "6059e0f0fa8149b283dfb95adf737457",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "45",
+        "metrics": {
+          "input_tokens": 16343,
+          "output_tokens": 2,
+          "cached_input_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "d1e79d9b85a74559a43a0c3b6a6ccc00",
+          "run_id": "6059e0f0fa8149b283dfb95adf737457",
+          "model_requested": "gemini-3.8-flash-low",
+          "model_reported": null,
+          "harness": "agy",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 16343,
+            "output_tokens": 2,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 6875.0,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:42:03.925642+00:00"
+        }
+      ]
+    },
+    {
+      "client": "antigravity",
+      "task": 1,
+      "arm": "hub",
+      "wall_ms": 7375.0,
+      "result": {
+        "run_id": "2f975714736f4fbdb69df8cb1303315c",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "[2,4,6]",
+        "metrics": {
+          "input_tokens": 16345,
+          "output_tokens": 5,
+          "cached_input_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "53aa6f5be7a34e47a49169619edae67b",
+          "run_id": "2f975714736f4fbdb69df8cb1303315c",
+          "model_requested": "gemini-3.8-flash-low",
+          "model_reported": null,
+          "harness": "agy",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 16345,
+            "output_tokens": 5,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 7188.000000009197,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:42:11.445180+00:00"
+        }
+      ]
+    },
+    {
+      "client": "antigravity",
+      "task": 1,
+      "arm": "baseline",
+      "wall_ms": 21327.999999994063,
+      "result": {
+        "run_id": "a3cf3faf3a9a47e3bd81d7348d476076",
+        "status": "succeeded",
+        "validation": {
+          "passed": true,
+          "type": "exact"
+        },
+        "output": "[2,4,6]",
+        "metrics": {
+          "input_tokens": 16336,
+          "output_tokens": 1511,
+          "cached_input_tokens": 0,
+          "reasoning_output_tokens": 1504,
+          "cache_creation_input_tokens": null,
+          "cost_reported_usd": null,
+          "attempt_count": 1,
+          "unknown_usage_attempts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 0,
+            "cache_creation_input_tokens": 1
+          },
+          "semantics": "provider_reported; cache inclusion differs across harnesses, do not sum fields blindly",
+          "native_children_complete": true,
+          "unknown_cost_attempts": 1,
+          "cost_kind": "unknown"
+        },
+        "children": []
+      },
+      "attempts": [
+        {
+          "id": "1fbe59cef8aa4f8d8b503494e59464b8",
+          "run_id": "a3cf3faf3a9a47e3bd81d7348d476076",
+          "model_requested": "gemini-3.8-flash-medium",
+          "model_reported": null,
+          "harness": "agy",
+          "status": "succeeded",
+          "usage": {
+            "input_tokens": 16336,
+            "output_tokens": 1511,
+            "cached_input_tokens": 0,
+            "reasoning_output_tokens": 1504,
+            "cache_creation_input_tokens": null
+          },
+          "cost_reported_usd": null,
+          "duration_ms": 21187.999999994645,
+          "validation": {
+            "passed": true,
+            "type": "exact"
+          },
+          "error": null,
+          "created": "2026-10-16T01:42:32.891737+00:00"
+        }
+      ]
+    }
+  ],
+  "implementation_sha256": {
+    "scripts/memory/executor.py": "a224119bef6851442fd7884cf89a0a32ea9f6b580f88eaf60b5215ba0bb0eafc",
+    "scripts/memory/policy.py": "8343a0d3df31de89ba54d09121a260a347c921ed5b8da370b0154d1819f4b39a",
+    "scripts/memory/telemetry.py": "8ed534debaef82c78f217e77f68c74f5674517ed333cb6003e33400c2bbf64d0",
+    "regras/orchestration.json": "1de20f6b84d3c6da1dd733b959b1ff4d4f559e00a3eb3f6367d1988d627be865"
+  }
+}

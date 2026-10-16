@@ -1,0 +1,9 @@
+@echo off
+setlocal
+set "IA_HUB_PORTABLE_FILE=%~f0"
+set "IA_HUB_PORTABLE_MODE="
+if /I "%~1"=="--help" (echo Uso: instalar.cmd [--cli ou --preview ou --self-test] & exit /b 0)
+if /I "%~1"=="--cli" set "IA_HUB_PORTABLE_MODE=--cli"
+if /I "%~1"=="--preview" set "IA_HUB_PORTABLE_MODE=--preview"
+if /I "%~1"=="--self-test" set "IA_HUB_PORTABLE_MODE=--self-test"
+if not "%~1"=="" if "%IA_HUB_PORTABLE_MODE%"=="" (echo Use --cli, --preview ou --self-test. & exit /b 1)

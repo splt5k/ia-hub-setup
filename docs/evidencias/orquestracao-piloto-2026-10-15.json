@@ -1,0 +1,128 @@
+[
+ {
+  "client": "claude-code",
+  "run_id": "8f2c52ebd8464f559b49a4035e486e69",
+  "status": "succeeded",
+  "validation": {
+   "passed": true,
+   "type": "exact"
+  },
+  "output": "45",
+  "decision": {
+   "model": "claude-haiku-5-5",
+   "effort": "low",
+   "tier": 0,
+   "reasons": [
+    "deterministic_complexity",
+    "ordinal_cost_tier_no_price",
+    "existing_client_account"
+   ]
+  },
+  "attempts": [
+   {
+    "model_requested": "claude-haiku-5-5",
+    "model_reported": "claude-haiku-5-5",
+    "status": "succeeded",
+    "duration_ms": 4843.999999997322,
+    "usage": {
+     "input_tokens": 2,
+     "output_tokens": 3,
+     "cached_input_tokens": 3109,
+     "reasoning_output_tokens": null,
+     "cache_creation_input_tokens": 2729
+    },
+    "cost_reported_usd": 0.00057859,
+    "error": null
+   }
+  ]
+ },
+ {
+  "client": "antigravity",
+  "run_id": "aaf5428d87ba47b79ffabeeb82b9f7e8",
+  "status": "failed",
+  "validation": {
+   "passed": false,
+   "type": "exact"
+  },
+  "output": "",
+  "decision": {
+   "model": "gemini-3.8-flash-low",
+   "effort": "low",
+   "tier": 0,
+   "reasons": [
+    "deterministic_complexity",
+    "ordinal_cost_tier_no_price",
+    "existing_client_account"
+   ]
+  },
+  "attempts": [
+   {
+    "model_requested": "gemini-3.8-flash-low",
+    "model_reported": null,
+    "status": "failed",
+    "duration_ms": 7891.00000000326,
+    "usage": {
+     "input_tokens": 16684,
+     "output_tokens": 2,
+     "cached_input_tokens": null,
+     "reasoning_output_tokens": null,
+     "cache_creation_input_tokens": null
+    },
+    "cost_reported_usd": null,
+    "error": "[] warning: --mode plan has no effect while slash command expansion is disabled."
+   },
+   {
+    "model_requested": "gemini-3.8-flash-medium",
+    "model_reported": null,
+    "status": "failed",
+    "duration_ms": 10187.999999994645,
+    "usage": {
+     "input_tokens": 16686,
+     "output_tokens": 108,
+     "cached_input_tokens": null,
+     "reasoning_output_tokens": null,
+     "cache_creation_input_tokens": null
+    },
+    "cost_reported_usd": null,
+    "error": "[] warning: --mode plan has no effect while slash command expansion is disabled."
+   }
+  ]
+ },
+ {
+  "client": "codex",
+  "run_id": "f46526cae3bc483e8ad88679959c284e",
+  "status": "failed",
+  "validation": {
+   "passed": false,
+   "type": "exact"
+  },
+  "output": "",
+  "decision": {
+   "model": "gpt-6.1-sol",
+   "effort": "low",
+   "tier": 0,
+   "reasons": [
+    "deterministic_complexity",
+    "ordinal_cost_tier_no_price",
+    "existing_client_account"
+   ]
+  },
+  "attempts": [
+   {
+    "model_requested": "gpt-6.1-sol",
+    "model_reported": null,
+    "status": "failed",
+    "duration_ms": 2108.9999999967404,
+    "usage": {
+     "input_tokens": null,
+     "output_tokens": null,
+     "cached_input_tokens": null,
+     "reasoning_output_tokens": null,
+     "cache_creation_input_tokens": null
+    },
+    "cost_reported_usd": null,
+    "error": "['You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.', {'message': 'You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 16th, 2026 1:33 AM.'}, 'Process exited with code 1'] Reading additional input from stdin..."
+   }
+  ]
+ }
+]

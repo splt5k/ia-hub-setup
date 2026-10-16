@@ -1,0 +1,16 @@
+scripts/sync.log
+.obsidian/workspace*.json
+.trash/
+_backup/
+contexto/
+*.canvas
+.memory-runtime/
+Memoria/
+__pycache__/
+*.pyc
+scripts/memory/*.log
+scripts/memory-start.ps1
+/backups/
+.tools/
+.setup-runtime/
+dist/
