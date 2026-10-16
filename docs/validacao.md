@@ -48,7 +48,7 @@ Ver [eficiencia.md](eficiencia.md) para a comparação linha de base × IA-Hub e
 - **GUI:** Claude Desktop, ChatGPT Desktop/Codex App e Antigravity App recebem MCP (e, onde existe, o mecanismo oficial), mas **não há** interceptação de prompt nem troca de modelo da janela principal. Não foi aberta nenhuma sessão gráfica autenticada nesta validação.
 - **Windows dentro do Claude Desktop:** processos filhos do app têm `AppData` virtualizado (MSIX). Instale numa pasta fora de `AppData` (`IA_HUB_INSTALL_DIR`) quando executar o instalador a partir dele; o registro do cofre no `obsidian.json` por esse caminho não chega ao Obsidian real.
 - **Obsidian:** o hub é adicionado à lista de cofres só com o app fechado; com o app aberto, abra a pasta pelo atalho `obsidian://open?path=…` ou reabra depois.
-- Máquina nova **real** (Windows recém-formatado, Linux com GUI, outras distros, ARM, systemd real) **não foi testada**.
+- Máquina nova **real** comprovada uma vez, em Windows de órgão público com política que nega tarefas agendadas (ver seção 8). Ainda não testadas: Windows recém-formatado, Linux com GUI, outras distros, ARM, systemd real.
 - O SHA256 embutido verifica integridade, não é assinatura digital.
 
 ## 6. Antigravity (2026-10-16)
@@ -91,7 +91,18 @@ Matriz final, confirmada pelo mantenedor:
 | Codex App (GUI) | Comprovado (`Memory search`) | Não existe | Não aplicável | Comprovado |
 | ChatGPT Desktop | Comprovado (mesmo MCP do Codex) | Não existe | Não aplicável | Comprovado |
 | OpenCode (CLI) | Comprovado (leitura e escrita) | Plugin de contexto | Nenhuma, por desenho | Comprovado |
-| Instalação em máquina nova | Confirmada pelo mantenedor (sem log anexado a este documento) | — | — | Confirmada pelo mantenedor |
+| Instalação em máquina nova (Windows, política sem tarefas agendadas) | Comprovado: memória ok, busca semântica pronta, integridade ok | — | — | Comprovado (seção 8) |
 | Controle negativo (conta sem IA-Hub) | Ferramenta `ia_hub` ausente no outro PC | — | — | Comprovado |
 
 Limites que permanecem: injeção só na primeira rodada e com consulta pelo nome da pasta; ChatGPT web não tem acesso à memória local; a memória não sincroniza entre máquinas.
+
+## 8. Máquina nova: Windows de órgão público (2026-10-16)
+
+Teste conduzido pelo mantenedor numa máquina de terceiros, com usuário comum, conta Google do Antigravity logada e sem o IA-Hub instalado antes.
+
+- **Primeira execução (`instalar.cmd` v2026.10.16):** falhou na etapa de memória. A política negou a tarefa agendada "IA-Hub Memory" ("Acesso negado") e o instalador encerrou com código 1. Apps, Python e configurações já tinham sido instalados.
+- **Correção (commit `ca3d7e5`, release v2026.10.17):** tarefa negada passa a gerar atalho na pasta Iniciar do usuário, sem administrador; se também for negado, a instalação segue no modo "manual".
+- **Reparação com v2026.10.17:** concluída (exit 0). Memória compartilhada pronta, busca semântica `ready`, integridade `ok`, início no login pelo atalho ("startup-folder"). Clientes Claude Code, Codex CLI, Antigravity CLI e OpenCode presentes e integrados; Claude Desktop integrado.
+- **Controle negativo e pergunta de contexto no Antigravity da máquina:** confirmados pelo mantenedor.
+
+Não foi testado nesta máquina: a instalação do zero após formatação, nem Linux.
