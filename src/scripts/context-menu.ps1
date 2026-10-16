@@ -70,8 +70,8 @@ $claudeExe   = Find-Exe @("$npm\node_modules\@anthropic-ai\claude-code\bin\claud
 $opencodeExe = Find-Exe @("$npm\node_modules\opencode-ai\bin\opencode.exe",
                            "$env:LOCALAPPDATA\Programs\@opencode-aidesktop\opencode.exe") 'opencode'
 
-$agyCliExe   = Find-Exe @("$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe",
-                           "$env:LOCALAPPDATA\Programs\Antigravity CLI\Antigravity CLI.exe") 'agy'
+$agyCliExe   = Find-Exe @("$env:LOCALAPPDATA\agy\bin\agy.exe",
+                           "$env:LOCALAPPDATA\Programs\Antigravity CLI\agy.exe") 'agy'
 
 # ── Remover entradas obsoletas ────────────────────────────────────────────────
 
@@ -114,13 +114,14 @@ if ($opencodeExe) {
 
 # Antigravity CLI — mantido/atualizado se existir no PC
 if ($agyCliExe) {
-    $e   = EscReg $agyCliExe
-    $cmd = '\"' + $e + '\" \"%V\"'
+    $e    = EscReg $agyCliExe
+    $cmdV = 'cmd.exe /s /k pushd \"%V\" && \"' + $e + '\"'
+    $cmdW = 'cmd.exe /s /k pushd \"%W\" && \"' + $e + '\"'
 
     $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\shell\AntigravityCLI' 'Abrir com Antigravity CLI' @{ Icon = $e })
-    $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\shell\AntigravityCLI\command' $cmd @{})
+    $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\shell\AntigravityCLI\command' $cmdV @{})
     $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\AntigravityCLI' 'Abrir com Antigravity CLI' @{ Icon = $e })
-    $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\AntigravityCLI\command' $cmd @{})
+    $reg += $NL + (RegSection 'HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\AntigravityCLI\command' $cmdW @{})
 }
 
 # ── Aplicar ───────────────────────────────────────────────────────────────────
