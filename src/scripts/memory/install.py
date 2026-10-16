@@ -29,6 +29,21 @@ def windows_command(parts):
     return ' '.join('"' + part.replace('\\', '/') + '"' if ('\\' in part or '/' in part or ' ' in part) else part for part in parts)
 
 
+def windows_startup_shortcut(script, denial):
+    """Atalho em Iniciar do usuário quando a tarefa agendada é negada. Nunca interrompe a instalação."""
+    ps = (
+        "$ErrorActionPreference='Stop'; $d=[Environment]::GetFolderPath('Startup'); "
+        "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $d 'IA-Hub Memory.lnk')); "
+        "$s.TargetPath=(Get-Command powershell.exe).Source; "
+        f"$s.Arguments='-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{script}\"'; "
+        "$s.WindowStyle=7; $s.Save()"
+    )
+    made = subprocess.run(['powershell.exe', '-NoProfile', '-Command', ps], capture_output=True, text=True)
+    if made.returncode == 0:
+        return 'startup-folder (tarefa agendada negada: ' + denial.strip()[:120] + ')'
+    return 'manual (tarefa e atalho negados; o serviço inicia pelo MCP ao usar a memória)'
+
+
 def powershell_command(parts):
     """Hooks do Antigravity no Windows rodam pelo PowerShell: `"exe" "arg"` é erro de sintaxe ali.
 
@@ -178,9 +193,12 @@ def main():
         task_arguments = ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + str(script) + '"').replace("'", "''")
         ps = "$a=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '" + task_arguments + "'; $t=New-ScheduledTaskTrigger -AtLogOn; $s=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; Register-ScheduledTask -TaskName 'IA-Hub Memory' -Action $a -Trigger $t -Settings $s -Description 'Memória local compartilhada IA-Hub' -Force | Out-Null"
         registered = subprocess.run(['powershell.exe', '-NoProfile', '-Command', ps], capture_output=True, text=True)
-        if registered.returncode:
-            raise RuntimeError('Falha ao registrar tarefa IA-Hub Memory: ' + registered.stderr[:200])
-        startup = 'windows-task'
+        if registered.returncode == 0:
+            startup = 'windows-task'
+        else:
+            # Políticas de empresa podem negar tarefas agendadas ("Acesso negado"). O serviço continua
+            # sob demanda pelo MCP; o atalho na pasta Iniciar do usuário dá o início no login sem elevação.
+            startup = windows_startup_shortcut(script, registered.stderr)
     else:
         from .linux import setup_startup
         startup = setup_startup(ROOT, home, python, entry, save)
