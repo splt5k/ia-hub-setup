@@ -1,4 +1,4 @@
-﻿# Instala clientes ausentes, dependências e memória compartilhada neste PC.
+# Instala clientes ausentes, dependências e memória compartilhada neste PC.
 # Uso (depois do git clone, em qualquer pasta):
 #   powershell -ExecutionPolicy Bypass -File <pasta-do-hub>\install.ps1
 # Pode rodar de novo sem problema (idempotente). Faz backup antes de alterar.
@@ -67,6 +67,13 @@ if (Tem @("$H\.config\opencode") 'opencode') {
     # Agentes/AGENTS.md do hub antigo são removidos por memory\install.py (só os de hash conhecido).
     $res['OpenCode'] = 'configurado (somente memória compartilhada)'
 } else { $res['OpenCode'] = 'não instalado - ignorado' }
+
+# ---------- Menu de contexto do Windows ----------
+if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+    $ctxResult = & "$hub\scripts\context-menu.ps1"
+    $res['Menu contexto (ClaudeCLI)'] = $ctxResult['ClaudeCLI']
+    $res['Menu contexto (OpenCode)']  = $ctxResult['OpenCode']
+} else { $res['Menu contexto'] = 'ignorado (não é Windows)' }
 
 # ---------- Obsidian ----------
 $obsExe = "$env:LOCALAPPDATA\Programs\Obsidian\Obsidian.exe"
