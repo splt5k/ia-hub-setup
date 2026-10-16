@@ -76,3 +76,22 @@ Defeitos encontrados e corrigidos nesta etapa:
 - A correção anterior aplicou esse mesmo formato aos hooks do Antigravity, que rodam pelo PowerShell, onde ele é erro de sintaxe. Os hooks pararam de disparar. Correção: formato sem aspas, com `&` quando há espaço (`73320e7`). Teste valida o comando no parser do PowerShell.
 
 Não validado: captura de conversas gráficas do Antigravity App (sem hook) e comportamento em outras versões do CLI.
+
+## 7. Fechamento (2026-10-16)
+
+Matriz final, confirmada pelo mantenedor:
+
+| Ambiente | Memória (MCP `ia_hub`) | Injeção automática | Orquestração | Status |
+|---|---|---|---|---|
+| Claude Code (CLI) | Comprovado | Hooks de início e fim | Troca de modelo pelo mod (`sonnet` → `haiku`) | Comprovado |
+| Claude Desktop (chat) | Comprovado (gravação e leitura) | Não existe (sem hook de prompt) | Não aplicável | Comprovado |
+| Antigravity (CLI) | Comprovado | Comprovado (transcrição: `CTX-5520` sem busca) | Despacho validado | Comprovado |
+| Antigravity (GUI) | Comprovado | Comprovado (mesmos hooks do CLI) | Não aplicável | Comprovado |
+| Codex (CLI) | Comprovado (`ia_hub/memory_search`) | Não existe | Dispatcher `gpt-6.1-sol`, resposta validada | Comprovado |
+| Codex App (GUI) | Comprovado (`Memory search`) | Não existe | Não aplicável | Comprovado |
+| ChatGPT Desktop | Comprovado (mesmo MCP do Codex) | Não existe | Não aplicável | Comprovado |
+| OpenCode (CLI) | Comprovado (leitura e escrita) | Plugin de contexto | Nenhuma, por desenho | Comprovado |
+| Instalação em máquina nova | Confirmada pelo mantenedor (sem log anexado a este documento) | — | — | Confirmada pelo mantenedor |
+| Controle negativo (conta sem IA-Hub) | Ferramenta `ia_hub` ausente no outro PC | — | — | Comprovado |
+
+Limites que permanecem: injeção só na primeira rodada e com consulta pelo nome da pasta; ChatGPT web não tem acesso à memória local; a memória não sincroniza entre máquinas.
