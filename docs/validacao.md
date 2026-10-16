@@ -61,13 +61,13 @@ Testes feitos pelo mantenedor no Windows, com a conta Google autenticada, instal
 | CLI interativo: pergunta sem pedir ferramenta, respondida com memória do projeto | **Comprovado** | Código `CTX-5520` na transcrição (`transcript_full.jsonl`) com duas mensagens efêmeras injetadas pelo hook de contexto e nenhuma etapa de ferramenta |
 | CLI: captura da resposta pelo hook de fim de turno | **Comprovado** | Registro com origem `antigravity:transcript:<conversa>` criado na mesma conversa |
 | GUI: chamada ao MCP (`memory_context`) | **Comprovado** | Etapa "Search memory … · ia_hub" na conversa, resposta `DESK-1234` |
-| GUI: injeção automática de memória | **Não existe por desenho** | O app não expõe hook de prompt |
+| GUI: injeção automática de memória (conversa nova) | **Comprovado** | Transcrição da conversa da GUI (`~/.gemini/antigravity/brain/<conversa>/…`): mensagens efêmeras injetadas pelo hook de contexto, resposta `CTX-5520` sem etapa de ferramenta, e captura posterior com origem `antigravity:transcript:…` |
 
 Limites do hook de contexto do CLI, comprovados no código e nos testes:
 
 - O hook recebe só `conversationId`, `invocationNum`, `modelName`, `transcriptPath` e `workspacePaths`. **Não recebe o texto da pergunta.**
 - A recuperação usa o nome da pasta do projeto como consulta. Registros que não se ligam ao nome da pasta não são injetados.
-- A injeção ocorre só na primeira rodada da conversa (`invocationNum` 1).
+- A injeção ocorre só na primeira rodada da conversa (`invocationNum` 1). Vale para o CLI e para a GUI, pois ambos usam os mesmos hooks em `~/.gemini/config/hooks.json`.
 - Com a verbosidade padrão ("medium"), chamadas de ferramenta podem ficar recolhidas na tela; a transcrição é a evidência confiável.
 
 Defeitos encontrados e corrigidos nesta etapa:
