@@ -86,6 +86,21 @@ class OpenCodeIsMemoryOnly(unittest.TestCase):
             self.assertTrue((agents / 'architect.md').exists())
 
 
+class WindowsHookCommand(unittest.TestCase):
+    def test_hook_command_survives_bash_and_has_no_backslashes(self):
+        from memory.install import windows_command
+        python = 'C:' + chr(92) + 'Users' + chr(92) + 'Fulano Silva' + chr(92) + 'IA-Hub' + chr(92) + 'python.exe'
+        entry = 'C:' + chr(92) + 'Users' + chr(92) + 'Fulano Silva' + chr(92) + 'IA-Hub' + chr(92) + 'entry.py'
+        command = windows_command([python, entry, 'hook', 'claude'])
+        self.assertNotIn(chr(92), command)
+        self.assertEqual(command, '"C:/Users/Fulano Silva/IA-Hub/python.exe" "C:/Users/Fulano Silva/IA-Hub/entry.py" hook claude')
+        bash = shutil.which('bash')
+        if bash:   # o bash precisa enxergar os mesmos quatro argumentos
+            r = subprocess.run([bash, '-c', 'for a in ' + command + '; do echo "[$a]"; done'], capture_output=True, text=True)
+            self.assertIn('[C:/Users/Fulano Silva/IA-Hub/python.exe]', r.stdout)
+            self.assertIn('[C:/Users/Fulano Silva/IA-Hub/entry.py]', r.stdout)
+
+
 class CliOutputParsing(unittest.TestCase):
     def test_antigravity_1_3_json_is_parsed(self):
         from memory.telemetry import parse_result

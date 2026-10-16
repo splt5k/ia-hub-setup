@@ -20,6 +20,15 @@ def strip_json_comments(text):
     return re.sub(r'("(?:\\.|[^"\\])*"|,\s*(?=[}\]]))', lambda m: m[0] if m[0].startswith('"') else '', text)
 
 
+def windows_command(parts):
+    """Linha de comando de hook para Windows.
+
+    Claude Code e Antigravity executam hooks por bash, PowerShell ou cmd conforme o ambiente: no bash
+    as barras invertidas desaparecem. Barras normais entre aspas funcionam em todos.
+    """
+    return ' '.join('"' + part.replace('\\', '/') + '"' if ('\\' in part or '/' in part or ' ' in part) else part for part in parts)
+
+
 def main():
     home = Path.home()
     STATE.mkdir(parents=True, exist_ok=True)
@@ -54,7 +63,7 @@ def main():
     if not WINDOWS:
         from .linux import sync_rules, config_home
         sync_rules(ROOT, home, save)
-    shell_command = subprocess.list2cmdline if WINDOWS else shlex.join
+    shell_command = windows_command if WINDOWS else shlex.join
 
     update_json(home / '.claude.json', lambda obj: obj.setdefault('mcpServers', {}).update(ia_hub=server('claude-code')))
     from .mods import install_mod
