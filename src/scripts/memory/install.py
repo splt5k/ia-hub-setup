@@ -29,6 +29,15 @@ def windows_command(parts):
     return ' '.join('"' + part.replace('\\', '/') + '"' if ('\\' in part or '/' in part or ' ' in part) else part for part in parts)
 
 
+def powershell_command(parts):
+    """Hooks do Antigravity no Windows rodam pelo PowerShell: `"exe" "arg"` é erro de sintaxe ali.
+
+    Sem espaços: linha simples (válida também no cmd, formato comprovado). Com espaços: operador de chamada `&`.
+    """
+    line = subprocess.list2cmdline(parts)
+    return '& ' + line if any(' ' in part for part in parts) else line
+
+
 def main():
     home = Path.home()
     STATE.mkdir(parents=True, exist_ok=True)
@@ -106,7 +115,7 @@ def main():
     agy_hooks = agy.with_name('hooks.json')
     def configure_agy_hooks(obj):
         obj['ia-hub-memory'] = {
-            event: [{'type': 'command', 'command': shell_command([python, entry, 'hook', f'antigravity-{mode}']), 'timeout': 15}]
+            event: [{'type': 'command', 'command': (powershell_command if WINDOWS else shlex.join)([python, entry, 'hook', f'antigravity-{mode}']), 'timeout': 15}]
             for event, mode in [('SessionStart', 'context'), ('PreInvocation', 'context'), ('Stop', 'capture')]
         }
     update_json(agy_hooks, configure_agy_hooks)
