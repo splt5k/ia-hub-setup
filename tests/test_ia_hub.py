@@ -101,6 +101,18 @@ class WindowsHookCommand(unittest.TestCase):
             self.assertIn('[C:/Users/Fulano Silva/IA-Hub/entry.py]', r.stdout)
 
 
+    @unittest.skipUnless(shutil.which('powershell') or shutil.which('pwsh'), 'PowerShell ausente')
+    def test_antigravity_hook_command_parses_in_powershell(self):
+        from memory.install import powershell_command
+        shell = shutil.which('powershell') or shutil.which('pwsh')
+        sep = chr(92)
+        for base in ('C:' + sep + 'Users' + sep + 'Fulano' + sep + 'IA-Hub', 'C:' + sep + 'Users' + sep + 'Fulano Silva' + sep + 'IA-Hub'):
+            command = powershell_command([base + sep + 'python.exe', base + sep + 'entry.py', 'hook', 'antigravity-context'])
+            check = "$e=$null; [void][System.Management.Automation.Language.Parser]::ParseInput($env:HUB_CMD,[ref]$null,[ref]$e); $e.Count"
+            r = subprocess.run([shell, '-NoProfile', '-Command', check], capture_output=True, text=True, env=dict(os.environ, HUB_CMD=command))
+            self.assertEqual(r.stdout.strip(), '0', command + ' ' + r.stderr[-300:])
+
+
 class CliOutputParsing(unittest.TestCase):
     def test_antigravity_1_3_json_is_parsed(self):
         from memory.telemetry import parse_result
