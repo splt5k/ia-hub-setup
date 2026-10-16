@@ -1,0 +1,52 @@
+# Validação — evidências e limites
+
+Data das provas: **2026-10-15/16**, PC Windows 11 x86_64 do mantenedor + Ubuntu 24.04 no WSL2.
+Tudo abaixo foi executado de verdade, salvo onde está escrito **simulação** ou **não comprovado**.
+Os pilotos com CLIs consomem cota das contas reais; os resultados são amostras pequenas, não prova geral de economia.
+
+## 1. Testes automatizados (`python -m unittest discover -s tests -v`)
+
+14 testes, todos passando em Windows. Cobrem, com daemon e SQLite reais em pasta temporária:
+
+- instaladores sincronizados com `src/` (`tools/build.py --check`);
+- OpenCode somente memória: roteador rejeita o cliente, política e configuração sem chaves de roteamento, plugin sem chamadas de orquestração e com JavaScript válido (`node --check`), MCP sem ferramentas `orchestration_*` para o OpenCode, daemon recusando `orchestration_*` vindo dele;
+- limpeza do legado do OpenCode (por hash e por assinatura do conjunto completo; agente isolado do usuário é preservado);
+- porta ocupada por serviço alheio: outra porta é escolhida e o serviço alheio não é tocado;
+- memória: escrita por um cliente, leitura por outro, deduplicação por chave estável, nota Markdown no cofre, README/regras do produto não viram memória;
+- parsing das saídas JSON dos CLIs (Antigravity 1.3).
+
+## 2. Instalador distribuído
+
+| Prova | Windows (`instalar.cmd`) | Linux (`instalar.sh`, Ubuntu 24.04/WSL, `tools/validate-linux.sh`) |
+|---|---|---|
+| `--self-test` (extração íntegra por SHA256, limpeza do temporário) | passou | passou |
+| Instalação completa em ambiente sem o hub | passou (pasta nova `C:\Users\MaykoM\IA-Hub`) | passou, HOME descartável, ~52 s, busca semântica `ready` |
+| Temporários removidos ao final | passou (0 pastas `ia-hub-setup.*`) | passou |
+| Daemon continua funcionando após apagar a extração | passou | passou |
+| Reexecução sem duplicar MCP/hooks/blocos | passou (blocos únicos conferidos) | passou: só mudam recibo do uv e lock temporário do Codex |
+| Substituição do hub antigo | MCPs, hooks, marketplace do mod e tarefas agendadas apontam para a nova pasta; pasta antiga não alterada | n/a |
+
+Defeitos reais encontrados e corrigidos nesta etapa: porta 43127 fixa bloqueava a instalação quando outro serviço a ocupava; o daemon herdava a pasta temporária do instalador e impedia a limpeza no Windows (exit 1); o importador tratava README/regras do produto como conhecimento; o parser não lia a saída do Antigravity 1.3; agentes antigos do OpenCode (de geração anterior) não eram removidos.
+
+## 3. Memória entre CLIs (pilotos reais, contas autenticadas)
+
+| Caminho | Resultado |
+|---|---|
+| Claude Code (CLI) grava via MCP → `reported`, origem `claude-code`, nota Markdown criada no cofre | **comprovado** |
+| Claude Code → OpenCode (CLI), sessão nova, **sem chamar ferramenta** (plugin injeta contexto) | **comprovado**: o OpenCode respondeu o código gravado |
+| OpenCode (CLI) → memória (plugin captura a resposta final; origem `opencode:session:…`) | **comprovado** |
+| OpenCode → Claude Code (CLI), sessão nova | **recuperado automaticamente** (o Claude citou o código), mas **recusou afirmá-lo** por estar `reported`; é o comportamento de proveniência desenhado |
+| Claude Code → Codex (CLI), sessão nova | **impedido**: a conta do Codex atingiu o limite de uso (erro do provedor, não contornado). Reexecutar após o reset |
+
+## 4. Orquestração (3 ambientes) — piloto real, tarefa trivial `17 + 28`
+
+Ver [eficiencia.md](eficiencia.md) para a comparação linha de base × IA-Hub e a matriz por ambiente.
+
+## 5. Limitações comprovadas
+
+- **Codex:** limite de uso da conta durante os testes; falha tratada sem repetição (uma tentativa, `failed`, erro do provedor registrado).
+- **GUI:** Claude Desktop, ChatGPT Desktop/Codex App e Antigravity App recebem MCP (e, onde existe, o mecanismo oficial), mas **não há** interceptação de prompt nem troca de modelo da janela principal. Não foi aberta nenhuma sessão gráfica autenticada nesta validação.
+- **Windows dentro do Claude Desktop:** processos filhos do app têm `AppData` virtualizado (MSIX). Instale numa pasta fora de `AppData` (`IA_HUB_INSTALL_DIR`) quando executar o instalador a partir dele; o registro do cofre no `obsidian.json` por esse caminho não chega ao Obsidian real.
+- **Obsidian:** o hub é adicionado à lista de cofres só com o app fechado; com o app aberto, abra a pasta pelo atalho `obsidian://open?path=…` ou reabra depois.
+- Máquina nova **real** (Windows recém-formatado, Linux com GUI, outras distros, ARM, systemd real) **não foi testada**.
+- O SHA256 embutido verifica integridade, não é assinatura digital.

