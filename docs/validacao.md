@@ -109,7 +109,7 @@ Não foi testado nesta máquina: a instalação do zero após formatação, nem 
 
 ## 9. Pendências em aberto (2026-10-18)
 
-- **Menu de contexto do Windows:** não testado de ponta a ponta. Em `HKCU\Software\Classes\Drive\shell` ainda existem `Antigravity`, `AntigravityIDE` e `OpenCode`, que deveriam ter sido removidas. A remoção foi bloqueada numa sessão de automação; falta executar e conferir no próprio PC.
+- **Menu de contexto do Windows (2026-10-18):** testado e aprovado pelo mantenedor no PC principal, com captura do menu da pasta (Antigravity CLI, Visual Studio, Claude, Codex CLI, OpenCode CLI e Code). Entradas de Antigravity IDE e OpenCode (GUI) removidas de `HKCU\Software\Classes\Drive\shell`; ícones das entradas restauradas não foram reconstruídos.
 - **CI (`.github/workflows/validate.yml`):** verde em Ubuntu e Windows no commit `3cb62d4`. Cobre testes unitários e a sincronia dos instaladores; não executa CLIs logados, hooks nem a instalação completa.
 - **Máquina nova:** sem log anexado. Para virar comprovada, anexar a saída do `instalar.cmd`.
 - **Linux em máquina nova:** não testado nesta rodada.
