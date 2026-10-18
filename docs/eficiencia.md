@@ -1,5 +1,7 @@
 # Demonstração de eficiência (piloto) e matriz por ambiente
 
+> **Documento histórico (snapshot de 2026-10-15).** Os bloqueios do Codex descritos abaixo foram superados depois; o estado atual de cada ambiente está em [validacao.md](validacao.md).
+
 Piloto real em **2026-10-15**, `scripts/benchmark.py --live --paired-only`: duas tarefas triviais com resposta exata
 (`17 + 28` e a lista JSON dos pares entre 1 e 6), executadas pelo dispatcher com as contas já logadas.
 **Linha de base** = modelo fixo escolhido manualmente (`mode=manual`); **hub** = decisão determinística do IA-Hub.

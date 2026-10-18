@@ -30,6 +30,24 @@ class BuildSync(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
+class RiskAwareRouting(unittest.TestCase):
+    def test_security_wording_never_falls_to_low_tier(self):
+        from memory.policy import Router
+        router = Router(SRC)
+        self.assertEqual(router.plan('revise as permissões de acesso', 'claude-code')['tier'], 2)
+        self.assertIn('risk_sensitive_floor_high', router.plan('revise as permissões de acesso', 'claude-code')['reasons'])
+
+    def test_destructive_operation_floors_to_medium(self):
+        from memory.policy import Router
+        plan = Router(SRC).plan('ajuste a migração do banco', 'claude-code')
+        self.assertEqual(plan['tier'], 1)
+        self.assertIn('risk_operation_floor_medium', plan['reasons'])
+
+    def test_plain_question_stays_low(self):
+        from memory.policy import Router
+        self.assertEqual(Router(SRC).plan('qual a diferença entre listas e tuplas?', 'claude-code')['tier'], 0)
+
+
 class OpenCodeIsMemoryOnly(unittest.TestCase):
     def test_router_rejects_opencode(self):
         from memory.policy import Router
