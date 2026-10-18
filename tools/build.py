@@ -5,7 +5,8 @@ Uso:
     python tools/build.py --check  # falha se os instaladores não refletem src/
 
 A saída é determinística (mtime/uid zerados, ordem fixa): o mesmo src/ gera
-sempre os mesmos bytes, então --check serve de guarda de sincronia fonte <-> instalador.
+sempre os mesmos bytes na mesma plataforma; --check compara o manifesto do payload embutido
+com src/, independente da zlib, e serve de guarda de sincronia fonte <-> instalador.
 """
 import base64
 import gzip
@@ -94,15 +95,37 @@ def build():
     return {'instalar.sh': installer_sh, 'instalar.cmd': installer_cmd}
 
 
+def in_sync(name, expected_manifest):
+    # Compara conteúdo, não bytes comprimidos: zlib difere entre plataformas/versões do Python.
+    path = ROOT / name
+    if not path.exists():
+        return False
+    text = path.read_bytes().decode('latin-1')
+    head, sep, body = text.rpartition(MARKER)
+    if not sep:
+        return False
+    archive = base64.b64decode(''.join(body.split()))
+    if name.endswith('.sh'):
+        if hashlib.sha256(archive).hexdigest() not in head:
+            return False
+        with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as tar:
+            embedded = tar.extractfile('payload-manifest.json').read()
+    else:
+        with zipfile.ZipFile(io.BytesIO(archive)) as archive_zip:
+            embedded = archive_zip.read('payload-manifest.json')
+    return json.loads(embedded) == json.loads(expected_manifest)
+
+
 def main():
-    outputs = build()
     if '--check' in sys.argv:
-        stale = [n for n, data in outputs.items() if not (ROOT / n).exists() or (ROOT / n).read_bytes() != data]
+        expected = manifest(source_files())
+        stale = [n for n in ('instalar.sh', 'instalar.cmd') if not in_sync(n, expected)]
         if stale:
             print('Instaladores fora de sincronia com src/: ' + ', '.join(stale) + '. Rode python tools/build.py.')
             return 1
         print('Instaladores em sincronia com src/.')
         return 0
+    outputs = build()
     for name, data in outputs.items():
         (ROOT / name).write_bytes(data)
         print(f'{name}: {len(data):,} bytes')
