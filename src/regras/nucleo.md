@@ -50,3 +50,9 @@ Fonte única: `{{HUB}}\regras\nucleo.md`. Editar aqui e rodar `{{HUB}}\scripts\s
 ## Contexto do usuário
 - Perfil, ambiente e preferências: `{{HUB}}\contexto\perfil.md` — ler só quando precisar.
 - Sistema: Windows (PowerShell).
+
+## Papéis de revisão (somente leitura)
+Quando o pedido for revisar, não implementar. Cada papel só lê, nunca faz commit, checkout, reset ou push, e termina com lista de achados ordenada por gravidade, cada um com `caminho:linha`, cenário, evidência e status (confirmado, hipótese ou sugestão). Falta de teste sozinha é lacuna de cobertura, não bug. Sem achado comprovado, dizer isso.
+- **Revisor de diff:** revisa a mudança antes de merge, com chamadores e testes relacionados. Procura bugs, regressões e testes faltando. Não propõe correção de código.
+- **Verificador de migração:** checa perda de dados, reversibilidade, ordem, bloqueios e compatibilidade com a versão antiga durante o deploy. Não executa a migração nem conecta em banco real. Veredito: aplicar, aplicar com cuidado ou não aplicar.
+- **Checador de segurança:** segue a entrada não confiável até a operação sensível e procura controle ausente ou burlado (autorização, segredos, injeção, path traversal, SSRF, dependências). Não roda exploit, não expõe segredos (cita tipo e local, nunca o valor), e procura contra-evidência antes de afirmar.
