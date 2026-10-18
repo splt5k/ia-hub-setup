@@ -91,7 +91,7 @@ Matriz final, confirmada pelo mantenedor:
 | Codex App (GUI) | Comprovado (`Memory search`) | Não existe | Não aplicável | Comprovado |
 | ChatGPT Desktop | Comprovado (mesmo MCP do Codex) | Não existe | Não aplicável | Comprovado |
 | OpenCode (CLI) | Comprovado (leitura e escrita) | Plugin de contexto | Nenhuma, por desenho | Comprovado |
-| Instalação em máquina nova (Windows, política sem tarefas agendadas) | Comprovado: memória ok, busca semântica pronta, integridade ok | — | — | Comprovado (seção 8) |
+| Instalação em máquina nova (Windows, política sem tarefas agendadas) | Relatado pelo mantenedor: memória ok, busca semântica pronta, integridade ok | — | — | Confirmado pelo mantenedor, sem log anexado (seção 8) |
 | Controle negativo (conta sem IA-Hub) | Ferramenta `ia_hub` ausente no outro PC | — | — | Comprovado |
 
 Limites que permanecem: injeção só na primeira rodada e com consulta pelo nome da pasta; ChatGPT web não tem acesso à memória local; a memória não sincroniza entre máquinas.
@@ -106,3 +106,11 @@ Teste conduzido pelo mantenedor numa máquina de terceiros, com usuário comum, 
 - **Controle negativo e pergunta de contexto no Antigravity da máquina:** confirmados pelo mantenedor.
 
 Não foi testado nesta máquina: a instalação do zero após formatação, nem Linux.
+
+## 9. Pendências em aberto (2026-10-18)
+
+- **Menu de contexto do Windows:** não testado de ponta a ponta. Em `HKCU\Software\Classes\Drive\shell` ainda existem `Antigravity`, `AntigravityIDE` e `OpenCode`, que deveriam ter sido removidas. A remoção foi bloqueada numa sessão de automação; falta executar e conferir no próprio PC.
+- **CI (`.github/workflows/validate.yml`):** verde em Ubuntu e Windows no commit `3cb62d4`. Cobre testes unitários e a sincronia dos instaladores; não executa CLIs logados, hooks nem a instalação completa.
+- **Máquina nova:** sem log anexado. Para virar comprovada, anexar a saída do `instalar.cmd`.
+- **Linux em máquina nova:** não testado nesta rodada.
+
