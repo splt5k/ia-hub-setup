@@ -58,6 +58,12 @@ class Router:
         normalized = unicodedata.normalize('NFKD', task_kind + ' ' + prompt).encode('ascii', 'ignore').decode().casefold()
         tier = 2 if re.search(r'arquitet|architect|design decision|causa desconhecida|intermitent|dificil|complex', normalized) else 1 if re.search(r'implement|implemente|corrig|fix|refator|refactor|bug|feature', normalized) else 0
         reasons = ['deterministic_complexity', 'ordinal_cost_tier_no_price', 'existing_client_account']
+        if re.search(r'seguranca|security|permiss|credencia|senha|password|segredo|secret|autentica|authenticat|oauth|lgpd|dados pessoais|personal data|producao|production', normalized):
+            tier = max(tier, 2)
+            reasons.append('risk_sensitive_floor_high')
+        elif re.search(r'migra|apagar|delete|deploy|remov|drop ', normalized):
+            tier = max(tier, 1)
+            reasons.append('risk_operation_floor_medium')
         profiles = overrides.get('profiles', PROFILES[client])
         if not isinstance(profiles, list) or len(profiles) != 3:
             raise ValueError('Invalid profiles')
