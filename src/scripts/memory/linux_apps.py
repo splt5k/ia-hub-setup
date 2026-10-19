@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -101,6 +102,28 @@ def package(name, url, manager, digest=''):
     return {'name': name, 'state': 'installed', 'detail': 'Login, consentimentos e recursos de virtualização não configurados'}
 
 
+def register_obsidian_vault():
+    # Mesmo critério do Windows: o hub entra na lista de cofres sem apagar os existentes.
+    config = Path(os.environ.get('XDG_CONFIG_HOME') or Path.home() / '.config') / 'obsidian' / 'obsidian.json'
+    try:
+        running = subprocess.run(['pgrep', '-x', 'obsidian'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+    except OSError:
+        running = False
+    if running:
+        return {'name': 'Obsidian cofre', 'state': 'pending', 'detail': 'Feche o Obsidian e rode Reparar para registrar o cofre do hub'}
+    try:
+        data = json.loads(config.read_text(encoding='utf-8-sig')) if config.exists() else {}
+    except ValueError:
+        return {'name': 'Obsidian cofre', 'state': 'failed', 'detail': f'{config} não é JSON válido; cofre do hub não registrado'}
+    vaults = data.setdefault('vaults', {})
+    if any(v.get('path') == str(ROOT) for v in vaults.values()):
+        return {'name': 'Obsidian cofre', 'state': 'present', 'detail': 'Cofre do hub já está na lista'}
+    vaults[os.urandom(8).hex()] = {'path': str(ROOT), 'ts': int(time.time() * 1000), 'open': True}
+    config.parent.mkdir(parents=True, exist_ok=True)
+    config.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+    return {'name': 'Obsidian cofre', 'state': 'installed', 'detail': f'Cofre do hub registrado: {ROOT}'}
+
+
 def install_apps():
     mode = os.environ.get('IA_HUB_INSTALL_MODE', 'headless')
     try:
@@ -126,6 +149,7 @@ def install_apps():
         suffix = '-arm64' if arch == 'arm64' else ''
         sha = 'fc212804515713ed85fe5ef5bc4b009872bcc01847c4be4fcc14971deee2a42d' if suffix else 'e70b7cd63787e7f798a84fec453f5c446b91877bd3f612e8fb98e9b76cc81120'
         attempt('Obsidian', lambda: portable('obsidian', f'https://github.com/obsidianmd/obsidian-releases/releases/download/v1.14.4/obsidian-1.14.4{suffix}.tar.gz', ['obsidian'], sha))
+        attempt('Obsidian cofre', register_obsidian_vault)
         agy_arch = 'arm' if arch == 'arm64' else 'x64'
         # The IDE also owns an "antigravity" command: never replace or count it as the App.
         attempt('Antigravity App', lambda: portable('antigravity-app', f'https://storage.googleapis.com/antigravity-public/antigravity-hub/2.23.1-6348059836284928/linux-{agy_arch}/Antigravity.tar.gz', ['Antigravity', 'antigravity']))
