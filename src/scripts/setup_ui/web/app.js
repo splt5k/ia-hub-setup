@@ -36,6 +36,11 @@ function render() {
   const phases=job.steps.length ? job.steps : phaseNames.map(([id,label])=>({id,label,status:'pending'}));
   const complete=phases.filter(p=>p.status==='done'||p.status==='skipped').length;
   $('steps').innerHTML=phases.map((p,i)=>`<li class="step ${esc(p.status)}"><span class="step-circle">${p.status==='done'?'✓':p.status==='running'?'·':p.status==='failed'?'!':i+1}</span><span>${esc(p.label)}</span><span class="step-state">${({done:'Concluído',running:'Em andamento',failed:'Falhou',skipped:'Ignorado'})[p.status]||''}</span></li>`).join('');
+  const pending=d.pending||[];
+  $('pending-list').hidden=!pending.length;
+  $('pending-list').innerHTML=pending.length?`<h4>Pendências</h4>${pending.map(p=>`<div class="pending-item ${esc(p.state)}"><strong>${esc(p.name)}</strong><span>${p.state==='failed'?'Falhou':'Não disponível nesta máquina'}${p.detail?' · '+esc(p.detail):''}</span></div>`).join('')}<button id="retry-pending" class="button secondary small" ${running||state.preview||d.foreign?'disabled':''}>Tentar pendências de novo</button>`:'';
+  const retry=$('retry-pending');
+  if(retry) retry.onclick=()=>openAction('repair');
   const titles={idle:'O próximo passo é seu',running:'Seu ambiente está em preparo',completed:job.action==='verify'?'Verificação concluída':job.action==='remove'?'Integração removida':'Tudo pronto por aqui',partial:'Concluído com pendências',failed:'Vamos resolver esta etapa'};
   const descriptions={idle:'Escolha uma ação. Você acompanha cada etapa por aqui.',running:'Acompanhe as etapas e os detalhes no log ao lado.',completed:job.action==='verify'?'Diagnóstico finalizado sem alterar sua configuração.':job.action==='remove'?'Aplicativos, banco e notas preservados. Você pode reconectar o ambiente quando quiser.':'Confira o resultado e os logins pendentes no relatório.',partial:'Alguns componentes precisam de atenção. O log mostra os detalhes.',failed:'Seus dados permanecem preservados. Consulte o log e tente novamente.'};
   $('job-title').textContent=titles[job.status]||titles.idle;

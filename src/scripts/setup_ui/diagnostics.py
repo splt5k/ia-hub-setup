@@ -91,6 +91,14 @@ def configured_servers(home):
     return result
 
 
+def pending_components(root):
+    # Windows grava uma lista; Linux grava {'components': [...]}. Ambos trazem name/state/detail.
+    report = json_file(root / 'contexto/bootstrap.json')
+    items = report.get('components', []) if isinstance(report, dict) else report or []
+    return [{'name': item.get('name', ''), 'state': item.get('state', ''), 'detail': item.get('detail', '')}
+            for item in items if isinstance(item, dict) and item.get('state') in ('pending', 'failed')]
+
+
 def discover(code_root, home=None):
     home = home or Path.home()
     servers = configured_servers(home)
@@ -134,5 +142,5 @@ def discover(code_root, home=None):
     return {'root': str(root), 'code_root': str(code_root), 'foreign': root.resolve() != code_root.resolve(),
             'installed': bool(health or (root / 'contexto/.memory/installation.json').exists() or any(entry_owned(v, root) for v in servers.values())),
             'configured': any(entry_owned(v, root) for v in servers.values()),
-            'health': health, 'apps': apps, 'system': {'os': 'Windows' if windows else 'Linux', 'arch': platform.machine()},
+            'health': health, 'apps': apps, 'pending': pending_components(root), 'system': {'os': 'Windows' if windows else 'Linux', 'arch': platform.machine()},
             'memory_preserved': (root / 'contexto/.memory/memory.sqlite3').exists()}
