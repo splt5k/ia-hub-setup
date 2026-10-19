@@ -77,7 +77,12 @@ def main():
 
     def update_json(path, apply):
         path = Path(path)
-        obj = json.loads(strip_json_comments(path.read_text(encoding='utf-8-sig'))) if path.exists() else {}
+        # Arquivo ausente ou vazio (o app criou e ainda não gravou nada) equivale a config nova.
+        text = strip_json_comments(path.read_text(encoding='utf-8-sig')).strip() if path.exists() else ''
+        try:
+            obj = json.loads(text) if text else {}
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f'JSON inválido em {path}: {exc}. Corrija ou apague o arquivo e rode o instalador de novo.')
         apply(obj)
         save(path, json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
 
