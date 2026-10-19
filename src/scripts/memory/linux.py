@@ -55,8 +55,11 @@ def sync_rules(root, home, save):
 def unit_arg(value, exec_value=True):
     if '\n' in str(value) or '\r' in str(value):
         raise ValueError('Caminho com quebra de linha não suportado.')
+    if not exec_value:
+        # WorkingDirectory= aceita só caminho absoluto cru: aspas o tornam relativo e invalidam a unit.
+        return str(value).replace('%', '%%')
     value = str(value).replace('\\', '\\\\').replace('"', '\\"').replace('%', '%%')
-    return '"' + (value.replace('$', '$$') if exec_value else value) + '"'
+    return '"' + value.replace('$', '$$') + '"'
 
 
 def running_memory():
