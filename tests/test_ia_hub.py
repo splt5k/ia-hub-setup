@@ -43,6 +43,22 @@ class RiskAwareRouting(unittest.TestCase):
         self.assertEqual(plan['tier'], 1)
         self.assertIn('risk_operation_floor_medium', plan['reasons'])
 
+    def test_single_hard_word_does_not_reach_opus(self):
+        from memory.policy import Router
+        self.assertEqual(Router(SRC).plan('isso é complexo? some 17 + 28', 'claude-code')['tier'], 1)
+        self.assertEqual(Router(SRC).plan('proponha a arquitetura do cache', 'claude-code')['tier'], 1)
+
+    def test_accumulated_signals_escalate_to_high(self):
+        from memory.policy import Router
+        plan = Router(SRC).plan('investigue o bug intermitente de concorrência e corrija', 'claude-code')
+        self.assertEqual((plan['tier'], plan['effort']), (2, 'high'))
+        self.assertIn('signal_heavy', plan['reasons'])
+
+    def test_escalation_after_failure_still_reaches_high(self):
+        from memory.policy import Router
+        router = Router(SRC)
+        self.assertEqual(router.escalate(router.plan('corrija o bug', 'claude-code'))['tier'], 2)
+
     def test_plain_question_stays_low(self):
         from memory.policy import Router
         self.assertEqual(Router(SRC).plan('qual a diferença entre listas e tuplas?', 'claude-code')['tier'], 0)

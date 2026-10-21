@@ -11,6 +11,28 @@ PROFILES = {
 }
 
 
+# Pesos somados: um sinal isolado não leva ao nível alto; o caro só entra com evidência acumulada.
+SIGNALS = [
+    ('signal_heavy', 2, r'arquitet|architect|design decision|decisao de design|causa desconhecida|sem causa aparente|intermitent|race condition|deadlock|concorrencia|vazamento de memoria|memory leak'),
+    ('signal_hard_word', 1, r'dificil|complex'),
+    ('signal_write', 1, r'implement|corrig|fix|refator|refactor|bug|feature|escrev|criar|crie|adicion|altere|alterar'),
+    ('signal_wide_scope', 1, r'todos os arquivos|varios arquivos|todo o projeto|todo o repositorio|multiple files|entire (codebase|repo)|ponta a ponta|end.to.end'),
+    ('signal_read_only', -1, r'^\W*(busque|procure|liste|resuma|leia|explique|mostre|find|search|list|summari[sz]e|read|explain)\b|\bo que e\b|qual a diferenca'),
+]
+
+
+def complexity_tier(normalized):
+    score, signals = 0, []
+    for name, weight, pattern in SIGNALS:
+        if re.search(pattern, normalized):
+            score += weight
+            signals.append(name)
+    if len(re.findall(r'[\w./\\-]+\.(?:py|js|ts|tsx|ps1|sh|cmd|json|md|toml|ya?ml|go|rs|java|cs)\b', normalized)) >= 3 or len(normalized) > 1500:
+        score += 1
+        signals.append('signal_large_input')
+    return (2 if score >= 3 else 1 if score >= 1 else 0), signals
+
+
 def bounded_string(value, name, limit=24000, empty=True):
     if not isinstance(value, str) or len(value) > limit or '\x00' in value or (not empty and not value.strip()):
         raise ValueError('Invalid ' + name)
@@ -56,8 +78,8 @@ class Router:
         if type(budget) is not int or not 256 <= budget <= 16000 or type(attempts) is not int or not 1 <= attempts <= 2:
             raise ValueError('Invalid policy limits')
         normalized = unicodedata.normalize('NFKD', task_kind + ' ' + prompt).encode('ascii', 'ignore').decode().casefold()
-        tier = 2 if re.search(r'arquitet|architect|design decision|causa desconhecida|intermitent|dificil|complex', normalized) else 1 if re.search(r'implement|implemente|corrig|fix|refator|refactor|bug|feature', normalized) else 0
-        reasons = ['deterministic_complexity', 'ordinal_cost_tier_no_price', 'existing_client_account']
+        tier, signals = complexity_tier(normalized)
+        reasons = ['deterministic_complexity', 'ordinal_cost_tier_no_price', 'existing_client_account', *signals]
         if re.search(r'seguranca|security|permiss|credencia|senha|password|segredo|secret|autentica|authenticat|oauth|lgpd|dados pessoais|personal data|producao|production', normalized):
             tier = max(tier, 2)
             reasons.append('risk_sensitive_floor_high')

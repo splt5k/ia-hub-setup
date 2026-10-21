@@ -2,10 +2,11 @@
 const executable = '__PYTHON__';
 const entry = '__ENTRY__';
 const MAX_CONTEXT_CHARS = 6000;
+const EFFORT_AGENTS = {low:'ia-hub-leve', medium:'ia-hub-padrao', high:'ia-hub-pesado'};
 
 async function rpc($, action, args) {
   const r = await $.process.run([executable, entry, action], {
-    stdin: JSON.stringify(args), timeoutMs: 5000,
+    stdin: JSON.stringify(args), timeoutMs: 20000,
   });
   if (r.exitCode !== 0 || r.isStdoutTruncated) throw new Error('IA-Hub RPC indisponível');
   return JSON.parse(r.stdout);
@@ -75,7 +76,10 @@ export function register(on) {
       } catch { await warn($); }
       const controlled = decision && ['native_hooks','native_mod','native'].includes(decision.control) &&
         typeof decision.model === 'string' && decision.model.trim();
-      return await next(controlled ? {...e,model:decision.model} : e);
+      if (!controlled) return await next(e);
+      // agent.spawn não reescreve effort: o genérico vira o agente do nível, que fixa o effort no frontmatter.
+      const tierAgent = e.subagentType === 'general-purpose' && !e.fork && EFFORT_AGENTS[decision.effort];
+      return await next({...e,model:decision.model,...(tierAgent ? {subagentType:tierAgent} : {})});
     } finally {
       spawning.set(session,Math.max(0,(spawning.get(session) ?? 1)-1));
     }
@@ -143,11 +147,8 @@ export function register(on) {
       if (!await bypass($, e)) state = turns.get(key(await $.session.id(), e));
     } catch { await warn($); }
     if (!state) return yield* next(e);
-    const d = state.decision;
-    // A política pode manter seleção manual, mesmo com integração ativa.
-    const controlled = !['manual','direct','direto'].includes(d.mode) &&
-      ['native','native_mod','native_hooks'].includes(d.control) && typeof d.model === 'string' && d.model.trim();
-    const requested = controlled ? {...e,model:d.model,...(d.effort ? {effort:d.effort} : {})} : e;
+    // O turno principal mantém o modelo escolhido pelo usuário (orquestrador); o roteamento atua só em subagentes via agent.spawn.
+    const requested = e;
     const start = await $.clock.now();
     let result;
     let status = 'failed';

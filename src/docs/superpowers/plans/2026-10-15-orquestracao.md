@@ -6,7 +6,7 @@ Goal: política comum aplicada em pontos de controle nativos, memória corrigida
 Architecture: reutilizar daemon/MCP/SQLite/runtime. Política determinística configurável, ledger aditivo, adaptadores CLI com permissões nativas, plugins nativos onde há controle por prompt. Interfaces sem controle ficam explicitamente limitadas.
 
 ## Restrições
-- Preservar produção D:/Pessoal/IA-Hub, dados, IDs/revisões e ajustes REA; testar isolado antes de aplicar.
+- Preservar produção D:/Pessoal/IA-Hub, dados e IDs/revisões; testar isolado antes de aplicar.
 - Sem novo provedor pago, gateway de credenciais, relaxamento de sandbox ou dependência de LLM para classificar toda solicitação.
 - Contadores ausentes/desconhecidos não são zero; preço estimado não é fatura da assinatura.
 - Distribuição final mantém instalar.cmd/sh autocontidos + README/imagem/metadados; fontes/testes versionados separadamente.
