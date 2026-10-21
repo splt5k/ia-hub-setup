@@ -2,6 +2,7 @@ import hmac
 import json
 import os
 import secrets
+import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,6 +11,17 @@ from .client import ROOT, STATE, PORT
 from .core import Memory, now
 from .capture import Capture
 from .opencode_capture import OpenCodeCapture
+
+
+class ExclusiveServer(ThreadingHTTPServer):
+    # No Windows, SO_REUSEADDR deixa um segundo daemon abrir a mesma porta: dois workers no mesmo banco.
+    # Porta exclusiva faz o perdedor da corrida falhar no bind e sair.
+    allow_reuse_address = os.name != 'nt'
+
+    def server_bind(self):
+        if os.name == 'nt' and hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
 
 def main():
@@ -111,7 +123,7 @@ def main():
             self.end_headers()
             self.wfile.write(data)
 
-    server = ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
+    server = ExclusiveServer(('127.0.0.1', PORT), Handler)
     # Servidor ocupa a porta antes da inicialização do modelo, evitando dois workers.
     def background():
         try:
@@ -130,7 +142,7 @@ def main():
             embedder('inicialização da memória compartilhada')
             with memory.lock:
                 memory.embedder = embedder
-                memory.backfill_vectors()
+            memory.backfill_vectors()   # pega o lock por registro, não durante o lote inteiro
             state.update(semantic_state='ready', model=MODEL)
         except Exception as error:
             state.update(semantic_state='failed', last_error=type(error).__name__ + ': ' + str(error)[:160])

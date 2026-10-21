@@ -56,6 +56,8 @@ class Memory:
         self.db = self.state / 'memory.sqlite3'
         self.embedder = embedder
         self.lock = threading.RLock()
+        self.reconciled = {}
+        self.legacy_signature = None
         with self.connection() as c:
             c.executescript('''
                 PRAGMA journal_mode=WAL;
@@ -312,16 +314,26 @@ class Memory:
             from .layout import Projector
             Projector(self).discover_renames()
             Projector(self).import_node_edits()
+            # Caminhos numa conexão só: note_file por registro abria uma conexão para cada nota.
             with self.connection() as c:
-                rows = c.execute('SELECT id,projection_hash,project,kind,tags,stable_key FROM records').fetchall()
+                rows = c.execute('SELECT * FROM records').fetchall()
+                projector = Projector(self)
+                paths = {row['id']: self.root / projector.record_path(c, row) for row in rows}
             for row in rows:
-                path = self.note_file(row['id'])
+                path = paths[row['id']]
                 if not path.exists():
                     with self.connection() as c:
                         c.execute('UPDATE records SET dirty=1,projection_hash=\'\' WHERE id=?', (row['id'],))
                 else:
+                    # Nota igual à última leitura (mtime, tamanho, hash) não é relida: o ciclo roda a cada poucos segundos.
+                    stat = path.stat()
+                    seen = (stat.st_mtime_ns, stat.st_size, row['projection_hash'])
+                    if self.reconciled.get(row['id']) == seen:
+                        continue
                     text = path.read_text(encoding='utf-8')
-                    if digest(text) != row['projection_hash']:
+                    if digest(text) == row['projection_hash']:
+                        self.reconciled[row['id']] = seen
+                    else:
                         match = re.search(r'^# ([^\n]+)\n\n(.*?)\n\n<!-- ia-hub:relations -->', text, re.S | re.M)
                         if not match:
                             continue  # Alteração estrutural: preservada; diagnóstico sinaliza conflito.
@@ -332,8 +344,12 @@ class Memory:
                                 existing = 'manual:' + row['id']
                                 c.execute('UPDATE records SET stable_key=? WHERE id=?', (existing, row['id']))
                         self.store(match[1], match[2], project=row['project'], kind=row['kind'], key=existing, tags=json.loads(row['tags']), source='obsidian:manual')
-            from .legacy import sync
-            sync(self)
+            from .legacy import sync, signature, retire_product_documents
+            retire_product_documents(self)   # barato e independente de arquivos: registros podem chegar por RPC
+            current = signature(self)
+            if current != self.legacy_signature:
+                sync(self)
+                self.legacy_signature = current
             self.project_dirty()
 
     def semantic_relations(self, c, item_id, vector):
@@ -351,12 +367,17 @@ class Memory:
     def backfill_vectors(self):
         if not self.embedder:
             return
+        # Só registros sem vetor: as relações dos demais já foram calculadas no store. Recalcular
+        # todos contra todos com o lock preso bloqueava cada RPC por ~40 s a cada subida do daemon.
         with self.lock, self.connection() as c:
-            for row in c.execute('SELECT id,title,content FROM records WHERE vector IS NULL').fetchall():
-                c.execute('UPDATE records SET vector=? WHERE id=?', (json.dumps(self.vector(row['title'] + '\n' + row['content'])), row['id']))
-            for row in c.execute('SELECT id,vector FROM records WHERE vector IS NOT NULL').fetchall():
-                self.semantic_relations(c, row['id'], json.loads(row['vector']))
-        self.project_dirty()
+            pending = c.execute('SELECT id,title,content FROM records WHERE vector IS NULL').fetchall()
+        for row in pending:
+            vector = self.vector(row['title'] + '\n' + row['content'])   # embedding fora do lock
+            with self.lock, self.connection() as c:
+                if c.execute('UPDATE records SET vector=? WHERE id=? AND vector IS NULL', (json.dumps(vector), row['id'])).rowcount:
+                    self.semantic_relations(c, row['id'], vector)
+        if pending:
+            self.project_dirty()
 
     def health(self):
         with self.lock, self.connection() as c:

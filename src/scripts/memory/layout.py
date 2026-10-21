@@ -67,8 +67,13 @@ class Projector:
                         c.execute('UPDATE ' + table + ' SET note_path=? WHERE id=?', (found[0].relative_to(self.m.root).as_posix(), row['id']))
                         if table == 'nodes':
                             c.execute('UPDATE records SET dirty=1')
-                    elif table == 'nodes' and not found:
+                    elif table == 'nodes' and not found and not self.archived(row['id']):
+                        # Nó arquivado por falta de uso não volta a sujar tudo: reprojetava 100% a cada ciclo.
                         c.execute('UPDATE records SET dirty=1')
+
+    def archived(self, node_id):
+        folder = self.m.state / 'unused-nodes'
+        return folder.exists() and any(folder.glob(node_id + '-*.md'))
 
     def import_node_edits(self):
         with self.m.lock, self.m.connection() as c:
