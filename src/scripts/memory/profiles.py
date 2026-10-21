@@ -61,7 +61,7 @@ def configure_profiles(home, save, version=None):
             report['changed'].append(str(path))
 
     # Section boundaries preserve all unrelated text verbatim, including unknown
-    # tables, hooks and REA. tomllib identifies quoted table names semantically.
+    # tables and hooks. tomllib identifies quoted table names semantically.
     headers = list(re.finditer(r'(?m)^[ \t]*(\[[^\r\n]+\])[^\r\n]*(?:\r?\n|$)', text))
     spans = {}
     for index, header in enumerate(headers):
