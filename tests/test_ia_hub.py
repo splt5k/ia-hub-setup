@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -199,6 +200,92 @@ class PortCoexistence(unittest.TestCase):
                 self.assertEqual(client.read_port(Path(d)), chosen)
                 self.assertEqual(client.PORT, chosen)
             self.assertEqual(foreign.getsockname()[1], busy)   # o serviço alheio continua intacto
+
+
+class LockIsNotHeldDuringSlowWork(unittest.TestCase):
+    """O lock global serializa todo RPC: trabalho lento de fundo não pode retê-lo (hook corta em 20 s)."""
+
+    def setUp(self):
+        from memory.core import Memory
+        self.root = Path(tempfile.mkdtemp(prefix='ia-hub-lock-'))
+        (self.root / 'contexto').mkdir()
+        self.memory = Memory(self.root)
+
+    def tearDown(self):
+        shutil.rmtree(self.root, ignore_errors=True)
+
+    def test_transcript_parse_runs_outside_global_lock(self):
+        from memory import capture as capture_module
+        cap = capture_module.Capture(self.memory)
+        transcript = self.root / 'sessao.jsonl'
+        message = {'type': 'assistant', 'cwd': str(self.root),
+                   'message': {'stop_reason': 'end_turn', 'content': [{'type': 'text', 'text': 'Resposta final longa o bastante para ser capturada pelo hub.'}]}}
+        transcript.write_text(json.dumps(message) + '\n', encoding='utf-8')
+        held, original = [], capture_module.json.loads
+        def spy(*a, **k):
+            if isinstance(a[0], bytes):   # só linhas do transcript; tags do store são str
+                held.append(self.memory.lock._is_owned())
+            return original(*a, **k)
+        with unittest.mock.patch.object(capture_module.json, 'loads', spy):
+            self.assertEqual(cap.ingest(transcript, 'claude'), 1)
+        self.assertEqual(held, [False])
+        self.assertEqual(cap.ingest(transcript, 'claude'), 0)   # cursor avançou: sem recaptura
+
+    def test_reconcile_skips_legacy_sync_when_files_unchanged(self):
+        import memory.legacy as legacy
+        note = self.root / 'contexto' / 'nota.md'
+        note.write_text('# Nota\n\nConteúdo do usuário.\n', encoding='utf-8')
+        calls = []
+        with unittest.mock.patch.object(legacy, 'sync', lambda m: calls.append(1)):
+            self.memory.reconcile()
+            self.memory.reconcile()
+            self.assertEqual(len(calls), 1)
+            note.write_text('# Nota\n\nConteúdo do usuário, editado.\n', encoding='utf-8')
+            self.memory.reconcile()
+            self.assertEqual(len(calls), 2)
+
+
+    def test_archived_unused_node_does_not_dirty_every_record(self):
+        from memory.layout import Projector
+        self.memory.store('Registro', 'Conteúdo qualquer para projetar no cofre do hub.', project=str(self.root), tags=['assunto-x'])
+        self.memory.project_dirty()
+        with self.memory.connection() as c:
+            c.execute('UPDATE records SET tags=?', (json.dumps([]),))   # assunto-x deixa de ser usado
+            c.execute('UPDATE records SET dirty=1')
+        self.memory.project_dirty()                                   # arquiva a nota do nó sem uso
+        self.assertTrue(list((self.memory.state / 'unused-nodes').glob('*.md')))
+        Projector(self.memory).discover_renames()
+        with self.memory.connection() as c:
+            self.assertEqual(c.execute('SELECT count(*) FROM records WHERE dirty=1').fetchone()[0], 0)
+
+
+    def test_backfill_embeds_outside_lock_and_only_missing_vectors(self):
+        self.memory.store('Com vetor', 'Registro que já tinha vetor antes do embedder existir.', project=str(self.root))
+        with self.memory.connection() as c:
+            c.execute('UPDATE records SET vector=?', (json.dumps([1.0, 0.0]),))
+        self.memory.store('Sem vetor', 'Registro gravado sem embedder ainda carregado.', project=str(self.root))
+        held, related = [], []
+        def embedder(text):
+            held.append(self.memory.lock._is_owned())
+            return [1.0, 0.0]
+        self.memory.embedder = embedder
+        original = self.memory.semantic_relations
+        self.memory.semantic_relations = lambda c, item_id, vector: (related.append(item_id), original(c, item_id, vector))
+        self.memory.backfill_vectors()
+        self.assertEqual(held, [False])
+        self.assertEqual(len(related), 1)   # só o registro sem vetor; não recalcula todos contra todos
+
+
+class ExclusiveDaemonPort(unittest.TestCase):
+    def test_second_daemon_cannot_bind_same_port(self):
+        from memory.daemon import ExclusiveServer
+        from http.server import BaseHTTPRequestHandler
+        first = ExclusiveServer(('127.0.0.1', 0), BaseHTTPRequestHandler)
+        try:
+            with self.assertRaises(OSError):
+                ExclusiveServer(('127.0.0.1', first.server_address[1]), BaseHTTPRequestHandler)
+        finally:
+            first.server_close()
 
 
 class RealMemoryRoundTrip(unittest.TestCase):

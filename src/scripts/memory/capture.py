@@ -1,5 +1,6 @@
 """Somente mensagens finais; nunca raciocínio, prompts ou saídas de ferramentas."""
 import json
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +11,8 @@ class Capture:
     def __init__(self, memory):
         self.memory = memory
         self.last_error = ''
+        # Serializa ingestões entre si sem segurar o lock global durante o parse.
+        self.ingest_lock = threading.Lock()
         with memory.connection() as c:
             c.execute('CREATE TABLE IF NOT EXISTS capture_context (path TEXT PRIMARY KEY,project TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS capture_meta (name TEXT PRIMARY KEY,value TEXT)')
@@ -68,74 +71,82 @@ class Capture:
         path = Path(path).resolve()
         if not path.exists():
             return 0
+        with self.ingest_lock:
+            return self._ingest(path, client, project)
+
+    def _ingest(self, path, client, project):
         captured = 0
         antigravity_final = ''
-        with self.memory.lock:
-            with self.memory.connection() as c:
-                row = c.execute('SELECT offset FROM cursors WHERE path=?', (str(path),)).fetchone()
-                context = c.execute('SELECT project FROM capture_context WHERE path=?', (str(path),)).fetchone()
-                project = project or (context[0] if context else '')
-            if not project and client == 'codex':
-                project = self.session_project(path)
-            offset = row[0] if row else 0
-            if path.stat().st_size < offset:
-                offset = 0
-            with path.open('rb') as stream:
-                stream.seek(offset)
-                for _ in range(2000):
-                    start = stream.tell()
-                    line = stream.readline(2 * 1024 * 1024)
-                    if len(line) == 2 * 1024 * 1024 and not line.endswith(b'\n'):
-                        # Anexos grandes são ignorados sem acumular seu conteúdo na memória.
-                        while line and not line.endswith(b'\n'):
-                            line = stream.readline(2 * 1024 * 1024)
-                        if line.endswith(b'\n'):
-                            continue
-                    if not line or not line.endswith(b'\n'):
-                        stream.seek(start)
-                        break
-                    try:
-                        event = json.loads(line)
-                    except (ValueError, UnicodeDecodeError):
+        found = []
+        # Lock global só para ler e gravar estado: o parse do transcript pode levar dezenas de segundos.
+        with self.memory.lock, self.memory.connection() as c:
+            row = c.execute('SELECT offset FROM cursors WHERE path=?', (str(path),)).fetchone()
+            context = c.execute('SELECT project FROM capture_context WHERE path=?', (str(path),)).fetchone()
+        project = project or (context[0] if context else '')
+        if not project and client == 'codex':
+            project = self.session_project(path)
+        offset = row[0] if row else 0
+        if path.stat().st_size < offset:
+            offset = 0
+        with path.open('rb') as stream:
+            stream.seek(offset)
+            for _ in range(2000):
+                start = stream.tell()
+                line = stream.readline(2 * 1024 * 1024)
+                if len(line) == 2 * 1024 * 1024 and not line.endswith(b'\n'):
+                    # Anexos grandes são ignorados sem acumular seu conteúdo na memória.
+                    while line and not line.endswith(b'\n'):
+                        line = stream.readline(2 * 1024 * 1024)
+                    if line.endswith(b'\n'):
                         continue
-                    project = event.get('cwd') or project
-                    if client == 'codex' and event.get('type') == 'session_meta':
-                        project = event.get('payload', {}).get('cwd') or project
-                    timestamp = event.get('timestamp') or event.get('created_at')
-                    if isinstance(timestamp, str):
-                        try:
-                            if datetime.fromisoformat(timestamp.replace('Z', '+00:00')).timestamp() < self.since:
-                                continue
-                        except ValueError:
-                            pass
-                    text = ''
-                    project = event.get('cwd') or project
-                    if client == 'claude' and event.get('type') == 'assistant':
-                        message = event.get('message', {})
-                        if message.get('stop_reason') == 'end_turn':
-                            text = '\n'.join(x.get('text', '') for x in message.get('content', []) if isinstance(x, dict) and x.get('type') == 'text')
-                    elif client == 'codex':
-                        payload = event.get('payload', {})
-                        if event.get('type') == 'session_meta':
-                            project = payload.get('cwd') or project
-                        if event.get('type') == 'response_item' and payload.get('role') == 'assistant' and payload.get('phase', payload.get('channel')) in ('final_answer', 'final'):
-                            text = '\n'.join(x.get('text', '') for x in payload.get('content', []) if x.get('type') == 'output_text')
-                    elif client == 'antigravity' and event.get('source') == 'MODEL' and event.get('type') == 'PLANNER_RESPONSE' and event.get('status') == 'DONE':
-                        antigravity_final = event.get('content', '')
-                    if len(text.strip()) >= 40:
-                        # Source por conteúdo idempotente, inclusive se hook e observador lerem juntos.
-                        key = 'capture:' + digest(str(path) + '\n' + text)
-                        first = next((x.lstrip('# -*') for x in text.splitlines() if x.strip()), 'Sessão')[:120]
-                        self.memory.store(first, text, project=project, source=f'{client}:transcript:{path.name}', key=key, kind='session-observation', tags=['sessão', client], status='reported')
-                        captured += 1
-                offset = stream.tell()
-            if len(antigravity_final.strip()) >= 40:
-                key = 'capture:' + digest(str(path) + '\n' + antigravity_final)
-                self.memory.store(antigravity_final.splitlines()[0][:120], antigravity_final, project=project, source=f'antigravity:transcript:{path.parent.parent.parent.name}', key=key, kind='session-observation', tags=['sessão', 'antigravity'], status='reported')
-                captured += 1
-            with self.memory.connection() as c:
-                c.execute('INSERT OR REPLACE INTO cursors VALUES (?,?,?)', (str(path), offset, path.stat().st_size))
-                c.execute('INSERT OR REPLACE INTO capture_context VALUES (?,?)', (str(path), project))
+                if not line or not line.endswith(b'\n'):
+                    stream.seek(start)
+                    break
+                try:
+                    event = json.loads(line)
+                except (ValueError, UnicodeDecodeError):
+                    continue
+                project = event.get('cwd') or project
+                if client == 'codex' and event.get('type') == 'session_meta':
+                    project = event.get('payload', {}).get('cwd') or project
+                timestamp = event.get('timestamp') or event.get('created_at')
+                if isinstance(timestamp, str):
+                    try:
+                        if datetime.fromisoformat(timestamp.replace('Z', '+00:00')).timestamp() < self.since:
+                            continue
+                    except ValueError:
+                        pass
+                text = ''
+                project = event.get('cwd') or project
+                if client == 'claude' and event.get('type') == 'assistant':
+                    message = event.get('message', {})
+                    if message.get('stop_reason') == 'end_turn':
+                        text = '\n'.join(x.get('text', '') for x in message.get('content', []) if isinstance(x, dict) and x.get('type') == 'text')
+                elif client == 'codex':
+                    payload = event.get('payload', {})
+                    if event.get('type') == 'session_meta':
+                        project = payload.get('cwd') or project
+                    if event.get('type') == 'response_item' and payload.get('role') == 'assistant' and payload.get('phase', payload.get('channel')) in ('final_answer', 'final'):
+                        text = '\n'.join(x.get('text', '') for x in payload.get('content', []) if x.get('type') == 'output_text')
+                elif client == 'antigravity' and event.get('source') == 'MODEL' and event.get('type') == 'PLANNER_RESPONSE' and event.get('status') == 'DONE':
+                    antigravity_final = event.get('content', '')
+                if len(text.strip()) >= 40:
+                    # Source por conteúdo idempotente, inclusive se hook e observador lerem juntos.
+                    key = 'capture:' + digest(str(path) + '\n' + text)
+                    first = next((x.lstrip('# -*') for x in text.splitlines() if x.strip()), 'Sessão')[:120]
+                    found.append((first, text, project, key))
+            offset = stream.tell()
+        # Cada store pega o lock sozinho e é idempotente pela key; o cursor só avança depois de gravar.
+        for first, text, item_project, key in found:
+            self.memory.store(first, text, project=item_project, source=f'{client}:transcript:{path.name}', key=key, kind='session-observation', tags=['sessão', client], status='reported')
+            captured += 1
+        if len(antigravity_final.strip()) >= 40:
+            key = 'capture:' + digest(str(path) + '\n' + antigravity_final)
+            self.memory.store(antigravity_final.splitlines()[0][:120], antigravity_final, project=project, source=f'antigravity:transcript:{path.parent.parent.parent.name}', key=key, kind='session-observation', tags=['sessão', 'antigravity'], status='reported')
+            captured += 1
+        with self.memory.lock, self.memory.connection() as c:
+            c.execute('INSERT OR REPLACE INTO cursors VALUES (?,?,?)', (str(path), offset, path.stat().st_size))
+            c.execute('INSERT OR REPLACE INTO capture_context VALUES (?,?)', (str(path), project))
         return captured
 
     def watch(self, baseline=False):

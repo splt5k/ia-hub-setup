@@ -49,6 +49,19 @@ def retire_product_documents(memory):
             c.execute("UPDATE records SET status='superseded',dirty=1 WHERE stable_key LIKE ? AND status='reference'", (pattern,))
 
 
+def signature(memory):
+    """Assinatura barata (caminho, mtime, tamanho) dos arquivos que sync lê; igual = nada a importar."""
+    root = memory.root
+    paths = list((root / 'contexto').rglob('*.md')) if (root / 'contexto').exists() else []
+    paths.append(root / 'modelos' / 'perfil.md')
+    result = []
+    for path in sorted(paths):
+        if path.exists() and not (EXCLUDED_DIRS & set(path.relative_to(root).parts)):
+            stat = path.stat()
+            result.append((str(path), stat.st_mtime_ns, stat.st_size))
+    return tuple(result)
+
+
 def sync(memory):
     root = memory.root
     retire_product_documents(memory)
