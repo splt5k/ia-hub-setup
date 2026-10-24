@@ -1,7 +1,7 @@
 ---
 name: ia-hub-pesado
 description: Agente genérico do roteamento IA-Hub para tarefa complexa ou de alto risco (arquitetura, bug sem causa aparente, segurança). Escolhido pelo hook; não chamar pelo nome.
-model: opus
+model: sonnet
 effort: high
 ---
 
