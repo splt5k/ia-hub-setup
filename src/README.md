@@ -94,7 +94,7 @@ O serviço existente decide modelo/esforço por regras determinísticas, sem cha
 
 | Ambiente | Controle efetivo | Limite |
 |---|---|---|
-| Claude Code ≥2.1.287 | Mod altera modelo antes da inferência; escolhe modelo de novas delegações | Retomadas/workflows preservados; orçamento de dois agentes é local, sem prova de atomicidade do runtime |
+| Claude Code ≥2.1.287 | Mod altera modelo antes da inferência; escolhe modelo de novas delegações | Retomadas/workflows preservados; subagentes no máximo Sonnet; forks recusados; sessões paralelas forçadas a Sonnet; limite de agentes opcional (`max_active_agents`, 0 = sem limite) |
 | OpenCode | Plugin altera o modelo da mensagem antes da inferência, preservando o provedor | Plugin posterior pode sobrescrever; GUI ainda requer validação própria |
 | Codex CLI/App local | MCP executa trabalhos delegados via CLI com modelo/esforço definidos | Não troca o modelo da conversa aberta automaticamente |
 | Antigravity CLI | Despacho com modelo definido e permissões nativas | Interceptação do modelo da GUI não comprovada |

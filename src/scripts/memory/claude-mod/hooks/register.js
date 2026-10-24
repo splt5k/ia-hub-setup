@@ -3,6 +3,8 @@ const executable = '__PYTHON__';
 const entry = '__ENTRY__';
 const MAX_CONTEXT_CHARS = 6000;
 const EFFORT_AGENTS = {low:'ia-hub-leve', medium:'ia-hub-padrao', high:'ia-hub-pesado'};
+const FALLBACK = {model:'claude-sonnet-5-5', effort:'medium'};
+const START_SESSION = 'mcp__ccd_session__start_session';
 
 async function rpc($, action, args) {
   const r = await $.process.run([executable, entry, action], {
@@ -61,14 +63,13 @@ export function register(on) {
       return {deny:'IA-Hub: delegação recursiva desativada para workers/subagentes.'};
     }
     if (['manual','direto','direct'].includes(await $.env.get('IA_HUB_ROUTING_MODE'))) return next(e);
+    // Fork sempre roda no modelo do orquestrador, e o model reescrito é ignorado.
+    if (e.fork) {
+      return {deny:'IA-Hub: fork herda o modelo do orquestrador (Opus). Use um subagent_type (ex.: general-purpose) com brief completo.'};
+    }
     const session = await $.session.id();
     spawning.set(session,(spawning.get(session) ?? 0)+1);
     try {
-      const agents = await $.agent.list();
-      const active = agents.filter(a=>['pending','running','waiting','idle'].includes(a.status)).length;
-      if (active+(spawning.get(session) ?? 0) > 2) {
-        return {deny:'IA-Hub: orçamento de dois agentes ativos/reservados atingido.'};
-      }
       let decision;
       try {
         decision = await rpc($,'orchestration_plan',{prompt:e.prompt,client:'claude-code',
@@ -76,15 +77,41 @@ export function register(on) {
       } catch { await warn($); }
       const controlled = decision && ['native_hooks','native_mod','native'].includes(decision.control) &&
         typeof decision.model === 'string' && decision.model.trim();
-      if (!controlled) return await next(e);
+      // Sem decisão, o subagente herdaria o Opus do orquestrador; cai no nível médio.
+      if (!controlled) decision = {...FALLBACK, max_active_agents:0};
+      const limit = decision.max_active_agents ?? 0;
+      if (limit > 0) {
+        const agents = await $.agent.list();
+        const active = agents.filter(a=>['pending','running','waiting','idle'].includes(a.status)).length;
+        if (active+(spawning.get(session) ?? 0) > limit) {
+          return {deny:`IA-Hub: limite de ${limit} agentes ativos/reservados atingido.`};
+        }
+      }
       // agent.spawn não reescreve effort: o genérico vira o agente do nível, que fixa o effort no frontmatter.
-      const tierAgent = e.subagentType === 'general-purpose' && !e.fork && EFFORT_AGENTS[decision.effort];
+      const tierAgent = e.subagentType === 'general-purpose' && EFFORT_AGENTS[decision.effort];
       return await next({...e,model:decision.model,...(tierAgent ? {subagentType:tierAgent} : {})});
     } finally {
       spawning.set(session,Math.max(0,(spawning.get(session) ?? 1)-1));
     }
   }).catch(async ($,e,next) => next.called ? next(e) :
-    {deny:'IA-Hub: não foi possível verificar o orçamento de delegação.'});
+    {deny:'IA-Hub: não foi possível verificar o roteamento da delegação.'});
+
+  // Sessões paralelas não passam por agent.spawn e herdariam o Opus do orquestrador.
+  on('tool.call', async ($, e, next) => {
+    if (e.tool !== START_SESSION || e.proposal_id || e.target === 'cloud' ||
+        ['manual','direto','direct'].includes(await $.env.get('IA_HUB_ROUTING_MODE'))) return next(e);
+    if (e.context === 'fork') {
+      return {deny:'IA-Hub: sessão fork herda o modelo do orquestrador (Opus). Use context "fresh" com background completo.'};
+    }
+    if (typeof e.model === 'string' && e.model.trim() && !/opus/i.test(e.model)) return next(e);
+    let decision;
+    try {
+      decision = await rpc($,'orchestration_plan',{prompt:[e.title,e.prompt,e.background].filter(Boolean).join('\n'),
+        client:'claude-code',project:await $.session.cwd(),current_model:await $.session.model(),mode:'auto'});
+    } catch { await warn($); }
+    // Sessão é tarefa inteira: sempre Sonnet; a política só ajusta o esforço.
+    return next({...e,model:FALLBACK.model,...(e.effort ? {} : {effort:decision?.effort ?? FALLBACK.effort})});
+  }).catch(async ($,e,next) => next.called ? next(e) : next({...e,model:FALLBACK.model}));
 
   on('prompt.submit', async ($, e, next) => {
     let stateKey;

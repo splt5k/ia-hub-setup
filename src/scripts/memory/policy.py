@@ -5,7 +5,8 @@ import unicodedata
 from pathlib import Path
 
 PROFILES = {
-    'claude': [('claude-haiku-5-5', 'low'), ('claude-sonnet-5-5', 'medium'), ('claude-opus-5-5', 'high')],
+    # Opus fica só no orquestrador; o nível alto de subagente é Sonnet com esforço alto.
+    'claude': [('claude-haiku-5-5', 'low'), ('claude-sonnet-5-5', 'medium'), ('claude-sonnet-5-5', 'high')],
     'codex': [('gpt-6.1-sol', 'low'), ('gpt-6.1-sol', 'medium'), ('gpt-6-astra', 'high')],
     'agy': [('gemini-3.8-flash-low', 'low'), ('gemini-3.8-flash-medium', 'medium'), ('gemini-3.8-flash-high', 'high')],
 }
@@ -75,7 +76,10 @@ class Router:
             raise ValueError('Invalid parallel capability')
         budget = overrides.get('context_budget', config.get('context_budget', 6000))
         attempts = overrides.get('max_attempts', config.get('max_attempts', 2))
-        if type(budget) is not int or not 256 <= budget <= 16000 or type(attempts) is not int or not 1 <= attempts <= 2:
+        # 0 = sem limite de subagentes simultâneos.
+        max_agents = overrides.get('max_active_agents', config.get('max_active_agents', 0))
+        if type(budget) is not int or not 256 <= budget <= 16000 or type(attempts) is not int or not 1 <= attempts <= 2 \
+                or type(max_agents) is not int or not 0 <= max_agents <= 64:
             raise ValueError('Invalid policy limits')
         normalized = unicodedata.normalize('NFKD', task_kind + ' ' + prompt).encode('ascii', 'ignore').decode().casefold()
         tier, signals = complexity_tier(normalized)
@@ -102,7 +106,8 @@ class Router:
         return {'policy_version': str(config.get('version', '1')), 'client': client, 'model': model,
                 'effort': effort, 'tier': tier, 'reasons': reasons,
                 'control': 'native_hooks' if native else 'dispatch_only', 'context_budget': budget,
-                'allow_parallel': native and bool(overrides.get('allow_parallel', True)), 'max_attempts': attempts}
+                'allow_parallel': native and bool(overrides.get('allow_parallel', True)), 'max_attempts': attempts,
+                'max_active_agents': max_agents}
 
     def escalate(self, decision):
         next_plan = self.plan('complex architecture' if decision['tier'] >= 1 else 'implement', decision['client'], current_model=decision['model'])

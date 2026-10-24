@@ -55,6 +55,12 @@ class RiskAwareRouting(unittest.TestCase):
         self.assertEqual((plan['tier'], plan['effort']), (2, 'high'))
         self.assertIn('signal_heavy', plan['reasons'])
 
+    def test_claude_subagents_never_get_opus(self):
+        from memory.policy import Router
+        plan = Router(SRC).plan('revise as permissões de acesso em produção e corrija o bug intermitente', 'claude-code')
+        self.assertEqual((plan['tier'], plan['model'], plan['effort']), (2, 'claude-sonnet-5-5', 'high'))
+        self.assertEqual(plan['max_active_agents'], 0)
+
     def test_escalation_after_failure_still_reaches_high(self):
         from memory.policy import Router
         router = Router(SRC)
