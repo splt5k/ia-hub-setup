@@ -136,6 +136,9 @@ class WindowsHookCommand(unittest.TestCase):
         self.assertNotIn(chr(92), command)
         self.assertEqual(command, '"C:/Users/Fulano Silva/IA-Hub/python.exe" "C:/Users/Fulano Silva/IA-Hub/entry.py" hook claude')
         bash = shutil.which('bash')
+        if bash and 'system32' in bash.lower():
+            git_bash = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Git/bin/bash.exe'
+            bash = str(git_bash) if git_bash.exists() else None
         if bash:   # o bash precisa enxergar os mesmos quatro argumentos
             r = subprocess.run([bash, '-c', 'for a in ' + command + '; do echo "[$a]"; done'], capture_output=True, text=True)
             self.assertIn('[C:/Users/Fulano Silva/IA-Hub/python.exe]', r.stdout)

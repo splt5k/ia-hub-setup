@@ -74,7 +74,13 @@ function Install-HubPackage($id, $source = 'winget') {
     $args = @('install', '--id', $id, '--exact', '--source', $source, '--silent', '--disable-interactivity', '--accept-package-agreements', '--accept-source-agreements')
     if ($source -eq 'winget') { $args += @('--scope','user') }
     & winget.exe @args | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "winget $id exit $LASTEXITCODE" }
+    # 0 = Sucesso
+    # -1978335189 (0x8A15002B) = WINGET_INST_UPDATE_NOT_APPLICABLE (já instalado e atualizado)
+    # -1978335187 (0x8A15002D) = WINGET_INST_PACKAGE_ALREADY_INSTALLED (já instalado)
+    # -1978335167 (0x8A150041) = WINGET_INST_UPGRADE_NOT_APPLICABLE
+    # 3010 / 1641 = Reinicialização necessária / agendada
+    $okCodes = @(0, -1978335189, -1978335187, -1978335167, 3010, 1641)
+    if ($LASTEXITCODE -notin $okCodes) { throw "winget $id exit $LASTEXITCODE" }
 }
 
 function Ensure-HubPackage($name, $id, [scriptblock]$detect, $source = 'winget', [scriptblock]$installer) {
@@ -90,7 +96,13 @@ function Ensure-HubPackage($name, $id, [scriptblock]$detect, $source = 'winget',
         Update-HubPath
         if (-not (& $detect)) { throw 'Installer completed but application was not found.' }
         return [pscustomobject]@{name=$name;state='installed';detail='Authentication may still be required'}
-    } catch { return [pscustomobject]@{name=$name;state='failed';detail=$_.Exception.Message} }
+    } catch {
+        Update-HubPath
+        if (& $detect) {
+            return [pscustomobject]@{name=$name;state='present';detail="Existing installation preserved ($($_.Exception.Message))"}
+        }
+        return [pscustomobject]@{name=$name;state='failed';detail=$_.Exception.Message}
+    }
 }
 
 function Install-HubNativeScript($url, $name) {
