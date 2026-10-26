@@ -115,8 +115,13 @@ function Backup-ContextMenu {
     $ts = Get-Date -Format 'yyyyMMdd_HHmmss'
     foreach ($suffix in @('Directory_shell', 'Background_shell')) {
         $key  = if ($suffix -eq 'Directory_shell') { 'HKCU\Software\Classes\Directory\shell' } else { 'HKCU\Software\Classes\Directory\Background\shell' }
+        # Máquina nova pode não ter a chave; não há o que salvar
+        if (-not (Test-Path ('Registry::' + $key))) { continue }
         $file = Join-Path $backupDir "context-menu_${suffix}_${ts}.reg"
+        # No PS 5.1 com Stop, qualquer stderr de comando nativo vira exceção
+        $ErrorActionPreference = 'Continue'
         reg export $key $file /y 2>$null | Out-Null
+        $ErrorActionPreference = 'Stop'
     }
     return $backupDir
 }
