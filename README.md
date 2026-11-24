@@ -26,7 +26,7 @@ Depois, **feche e abra de novo** as IAs que estavam abertas.
 | IA | Padrão depois de instalar | Para tarefa difícil |
 |---|---|---|
 | Claude Code | Sonnet, resumo automático de conversa ligado, subagentes `buscador` (Haiku) e `executor` (Sonnet) | `/model opus` e depois `/model sonnet` |
-| Codex | GPT-6.1 Sol, raciocínio médio, perfis `rapido` e `pesado` | `codex --profile pesado` |
+| Codex | GPT-6.2 Sol, raciocínio médio, perfis `rapido` e `pesado` | `codex --profile pesado` |
 | Antigravity | regras curtas (o arquivo de instruções antigo vai para o backup) | trocar para Pro no seletor |
 | OpenCode | orquestrador + 8 subagentes, cada um no modelo certo | escolhe sozinho |
 
