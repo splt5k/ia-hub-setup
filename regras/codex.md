@@ -1,7 +1,7 @@
 # Codex (ChatGPT) — específico
 
-## Perfis (config.toml)
-- Padrão: `gpt-6.1-sol`, raciocínio médio.
-- `codex --profile rapido`: `gpt-6.1-sol`, raciocínio baixo — buscas, perguntas, ajustes pequenos.
-- `codex --profile pesado`: `gpt-6-astra`, raciocínio alto — arquitetura e bugs difíceis.
-- No app: escolher o modelo/esforço equivalente no seletor.
+## Perfis e Modelos
+- Padrão: `gpt-6.2-sol`, raciocínio médio (equilíbrio ideal de velocidade, qualidade e economia).
+- Tarefas simples e rápidas: `gpt-6.2-sol` ou `gpt-6-luna`, raciocínio baixo.
+- Arquitetura, planejamento pesado e bugs difíceis: `gpt-6.2-astra`, raciocínio alto.
+- Supervisão / Modo Advisor: agir com postura de auditor sênior — antes de finalizar tarefas complexas ou introduzir mudanças arquiteturais, fazer auto-revisão crítica rigorosa do impacto, regressões e consistência com a memória do IA-Hub.

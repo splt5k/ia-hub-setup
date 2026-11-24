@@ -4,3 +4,8 @@ scripts/sync.log
 _backup/
 contexto/
 *.canvas
+.memory-runtime/
+Memoria/
+__pycache__/
+*.pyc
+scripts/memory/*.log

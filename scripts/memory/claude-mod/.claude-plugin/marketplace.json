@@ -1,0 +1,1 @@
+{"name":"ia-hub-local","description":"Integrações locais IA-Hub com os clientes nativos.","owner":{"name":"IA-Hub"},"plugins":[{"name":"ia-hub-router","source":"./","description":"Controle nativo por prompt com memória IA-Hub."}]}

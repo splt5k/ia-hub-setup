@@ -10,10 +10,12 @@ function Log($m) { "$(Get-Date -Format s) $m" | Out-File $log -Append -Encoding 
 
 function Ler($rel) { [IO.File]::ReadAllText((Join-Path $hub $rel), $utf8).Replace('{{HUB}}', $hub) }
 
-function Gerar($destino, $especifico) {
+function Gerar($destino, $especifico, [switch]$SomenteEspecifico) {
     $aviso = "<!-- GERADO por $hub\scripts\sync.ps1. Não edite aqui: edite $hub\regras. -->`n`n"
-    $conteudo = $aviso + (Ler 'regras\nucleo.md')
-    if ($especifico) { $conteudo += "`n" + (Ler $especifico) }
+    # OpenCode é memory-only no diagrama: recebe só regras/opencode.md, sem o núcleo de roteamento.
+    $conteudo = $aviso
+    if (-not $SomenteEspecifico) { $conteudo += (Ler 'regras\nucleo.md') }
+    if ($especifico) { $conteudo += $(if ($SomenteEspecifico) { '' } else { "`n" }) + (Ler $especifico) }
     [IO.File]::WriteAllText($destino, $conteudo, $utf8)
 }
 
@@ -27,7 +29,7 @@ try {
     }
     if (Test-Path "$H\.codex")           { Gerar "$H\.codex\AGENTS.md"  'regras\codex.md';       $feitos += 'codex' }
     if (Test-Path "$H\.gemini")          { Gerar "$H\.gemini\GEMINI.md" 'regras\antigravity.md'; $feitos += 'antigravity' }
-    if (Test-Path "$H\.config\opencode") { Gerar "$H\.config\opencode\ia-hub.md" $null;          $feitos += 'opencode' }
+    if (Test-Path "$H\.config\opencode") { Gerar "$H\.config\opencode\ia-hub.md" 'regras\opencode.md' -SomenteEspecifico;         $feitos += 'opencode' }
 
     # Obsidian: garante o hub na lista de cofres (só com o app fechado, senão ele sobrescreve)
     $obsCfg = "$env:APPDATA\obsidian\obsidian.json"
