@@ -27,11 +27,13 @@ $Tools = @(
         Label     = 'Abrir com Antigravity CLI'
         Title     = 'Antigravity CLI'
         Commands  = @('agy')
+        Launcher  = "$PSScriptRoot\launch-antigravity.cmd"
+        Admin     = $true
         Paths     = @(
             "$env:LOCALAPPDATA\agy\bin\agy.exe",
             "$env:LOCALAPPDATA\Programs\Antigravity CLI\agy.exe"
         )
-        Args      = '--dangerously-skip-permissions'
+        Args      = '--dangerously-skip-permissions --model gemini-3.8-flash-medium'
         IconFiles = @(
             "$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe",
             "$env:ProgramFiles\Antigravity\Antigravity.exe",
@@ -41,9 +43,11 @@ $Tools = @(
     },
     @{
         Key       = 'ClaudeCLI'
-        Label     = 'Abrir com Claude Code CLI'
-        Title     = 'Claude Code CLI'
+        Label     = 'Abrir com Claude CLI'
+        Title     = 'Claude CLI'
         Commands  = @('claude')
+        Launcher  = "$PSScriptRoot\launch-claude.cmd"
+        Admin     = $true
         Paths     = @(
             "$env:USERPROFILE\.local\bin\claude.exe",
             "$env:LOCALAPPDATA\Microsoft\WinGet\Links\claude.exe",
@@ -52,8 +56,9 @@ $Tools = @(
             "$env:LOCALAPPDATA\Programs\claude\claude.exe",
             "$env:LOCALAPPDATA\AnthropicClaude\app\claude.exe"
         )
-        Args      = '--dangerously-skip-permissions'
+        Args      = '--dangerously-skip-permissions --model sonnet --advisor opus --chrome'
         IconFiles = @(
+            "$env:LOCALAPPDATA\AgentesIA\icons\ClaudeCLI.ico",
             "$env:LOCALAPPDATA\AnthropicClaude\app.ico",
             "$env:LOCALAPPDATA\AnthropicClaude\claude.exe",
             "$env:ProgramFiles\AnthropicClaude\claude.exe"
@@ -65,12 +70,14 @@ $Tools = @(
         Label     = 'Abrir com Codex CLI'
         Title     = 'Codex CLI'
         Commands  = @('codex')
+        Launcher  = "$PSScriptRoot\launch-codex.cmd"
+        Admin     = $true
         Paths     = @(
             "$env:LOCALAPPDATA\Microsoft\WinGet\Links\codex.exe",
             "$env:USERPROFILE\.codex\bin\codex.exe",
             "$env:APPDATA\npm\codex.cmd"
         )
-        Args      = '--dangerously-bypass-hook-trust'
+        Args      = '--dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust -c model=\"gpt-6.2-sol\" -c model_reasoning_effort=\"medium\" --search'
         IconFiles = @("$env:USERPROFILE\.codex\codex.ico")
         Appx      = @('*Codex*', '*ChatGPT*')
     },
@@ -96,7 +103,7 @@ $Targets = @(
     @{ ShellPath = 'Software\Classes\*\shell';                    Arg = '%1\..' }
 )
 
-$ObsoleteKeys = @('Antigravity', 'AntigravityIDE')
+$ObsoleteKeys = @('Antigravity', 'AntigravityIDE', 'OpenCode')
 
 # =====================================================================
 #  FUNÇÕES
@@ -232,12 +239,19 @@ function Register-ContextMenu($Tool, [string]$Exe, [string]$Icon) {
     $launch = ("`"$Exe`" " + $Tool.Args).Trim()
     foreach ($t in $Targets) {
         $keyPath = "$($t.ShellPath)\$($Tool.Key)"
-        # /s + aspas externas: o cmd remove só o par externo e preserva as aspas internas
-        $command = "cmd.exe /s /k `"pushd `"$($t.Arg)`" && title $($Tool.Title) && $launch`""
+        if ($Tool.Launcher -and (Test-Path -LiteralPath $Tool.Launcher)) {
+            $command = "cmd.exe /c `"`"$($Tool.Launcher)`" `"$($t.Arg)`"`""
+        } else {
+            # /s + aspas externas: o cmd remove só o par externo e preserva as aspas internas
+            $command = "cmd.exe /s /k `"pushd `"$($t.Arg)`" && title $($Tool.Title) && $launch`""
+        }
 
         $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($keyPath)
         $k.SetValue('', $Tool.Label)
         $k.SetValue('Icon', $Icon)
+        if ($Tool.Admin) {
+            $k.SetValue('HasLUAShield', '')
+        }
         $k.Close()
 
         $c = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("$keyPath\command")
