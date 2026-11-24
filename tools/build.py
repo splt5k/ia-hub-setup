@@ -33,7 +33,11 @@ CRLF, LF = bytes([13, 10]), bytes([10])
 
 
 def normalize(path, data):
-    return data.replace(CRLF, LF) if path.suffix in TEXT_SUFFIX else data
+    if path.suffix in TEXT_SUFFIX:
+        return data.replace(CRLF, LF)
+    if path.suffix == '.cmd':
+        return data.replace(CRLF, LF).replace(LF, CRLF)
+    return data
 
 
 def lf(path):

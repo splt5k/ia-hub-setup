@@ -4,3 +4,5 @@
 *.service text eol=lf
 *.cmd text eol=crlf
 *.jpg binary
+*.png binary
+*.ico binary
